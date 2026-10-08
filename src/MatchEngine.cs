@@ -13,6 +13,7 @@ public sealed class BattleUnit {
 public sealed class MatchPlayer {
  public string ClassId;public int Health=30,Armor,MaxMana,Mana,Overload,LockedMana,Fatigue,HeroAttacks,TempAttack,FrozenTurn;
  public bool Frozen,PowerUsed;public string WeaponId;public int WeaponAttack,WeaponDurability;public bool WeaponWindfury;
+ public int ReportedHandCount=-1;public int HandCount{get{return ReportedHandCount<0?Hand.Count:ReportedHandCount;}}
  public readonly List<string> Deck=new List<string>();public readonly List<HandCard> Hand=new List<HandCard>();public readonly List<BattleUnit> Board=new List<BattleUnit>();
 }
 public sealed class ActionResult {public bool Success;public string Message;}

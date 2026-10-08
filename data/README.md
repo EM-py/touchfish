@@ -11,6 +11,7 @@ https://api.hearthstonejson.com/v1/253932/zhCN/cards.json
 - `sources/hearthstonejson-classic-zhCN.json` 保留来源原始记录；`sources/provenance.json` 记录固定 URL、build、完整下载 SHA256、导入文件 SHA256 和数量。
 - 卡牌名称和数值属于 Blizzard；HearthstoneJSON 数据说明：https://hearthstonejson.com/docs/cards.html
 - 冻结 VANILLA 武器记录可能显式给出 `durability: 0` 并把实际耐久放在 `health`。导入器将该历史字段映射为正常的 Durability，已检查十二把武器的耐久为正数；炽炎战斧为 2，毁灭之锤为 8。
+- 冻结记录的 `spellDamage` 可能只表示法强机制存在，例如玛里苟斯原始为 1，但牌面为“法术伤害+5”。导入器按 SPELLPOWER 牌面中的明确数字归一化加成，玛里苟斯为 5；原始来源记录保持不变。
 
 ## 添加新牌库
 

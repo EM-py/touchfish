@@ -10,6 +10,15 @@ def plain(value):
     value = re.sub(r"<br\s*/?>", "\n", value or "", flags=re.I)
     return html.unescape(re.sub(r"<[^>]+>", "", value)).replace("[x]", "").replace("$", "").replace("#", "").strip()
 
+def spell_damage(card):
+    # Frozen VANILLA spellDamage can be a presence marker (Malygos: 1).
+    # The printed numeric bonus is the authoritative magnitude.
+    if "SPELLPOWER" in card.get("mechanics", []):
+        bonus = re.search(r"法术伤害\s*[+＋]\s*(\d+)", plain(card.get("text")))
+        if bonus:
+            return int(bonus.group(1))
+    return card.get("spellDamage", 0)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--offline", action="store_true")
@@ -41,7 +50,7 @@ def main():
             "Collectible": bool(c.get("collectible")) and c["type"] in ("MINION", "SPELL", "WEAPON"),
             "Mechanics": c.get("mechanics", []), "Race": c.get("race", ""),
             "Entourage": c.get("entourage", []), "Overload": c.get("overload", 0),
-            "SpellDamage": c.get("spellDamage", 0),
+            "SpellDamage": spell_damage(c),
         })
     package = {"SchemaVersion": 1, "Id": "classic-2014", "Name": "经典 2014", "Version": f"VANILLA-{BUILD}",
                "Cards": sorted(normalized, key=lambda c: c["Id"])}
@@ -61,6 +70,7 @@ def main():
     assert n["VAN_CS2_106"]["Cost"] == 2
     assert n["VAN_CS2_106"]["Durability"] == 2 and n["VAN_EX1_567"]["Durability"] == 8
     assert all(c["Durability"] > 0 for c in collectible if c["Type"] == "WEAPON")
+    assert n["VAN_EX1_563"]["SpellDamage"] == 5
     pool = {"SchemaVersion": 1, "Pools": [{"Id": "classic-2014", "Name": "经典 2014", "CardSetIds": ["classic-2014"],
         "DeckSize": 30, "CopyLimit": 2, "LegendaryLimit": 1, "DeckstringFormat": 3,
         "HeroDbfIds": {h["cardClass"]: h["dbfId"] for h in heroes}}]}

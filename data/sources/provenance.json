@@ -1,12 +1,12 @@
 {
   "SourceUrl": "https://api.hearthstonejson.com/v1/253932/zhCN/cards.json",
-  "ImportedUtc": "2026-10-08T06:54:05.945917+00:00",
+  "ImportedUtc": "2026-10-08T08:39:35.415640+00:00",
   "SnapshotCachedUtc": "2026-10-08T03:11:27.901909+00:00",
   "SourceBuild": "253932",
   "RulesBaseline": "2014-06 / 1.0.0.5832 via frozen VANILLA records",
   "FullSnapshotSha256": "41d3047f6c8b43c36b21a4bc76a34eeeb5c949cd27d088cf7709356fe4db6b6e",
   "SourceExtractSha256": "ce04acad52159e169e8fe5a2c25e1ddde9843f411c37963c702a68b7927d5b2b",
-  "PackageSha256": "1eb126a5f68a5d020e59893c1758e43794fd4a35f238f695567c83d3e34b50a9",
+  "PackageSha256": "97910aa3274056675d48a655a3d0fb3ab768b17c75f4adcfddd3c8db0f5b0b81",
   "TotalRecords": 518,
   "DeckableCards": 382,
   "ClassCounts": {

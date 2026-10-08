@@ -4,7 +4,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.1",Date="2026-10-08";
+ public const string Version="v0.1.1",Date="2026-10-08";
+ public static readonly string[] PatchNotes={"修复玛里苟斯法术伤害：原先错误地增加 1，现在正确增加 5；沉默或离场后移除加成。","对方英雄区域显示手牌数量，随抽牌与出牌同步变化；不显示对方手牌内容。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -23,7 +24,7 @@ public partial class PanelWindow {
  Grid releasePanel;Button releaseTab;
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);releasePanel.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));
-  var body=new StackPanel();var date=T(AppRelease.Date+" · 一号版本",10,Muted);date.Margin=new Thickness(0,0,0,8);body.Children.Add(date);foreach(string note in AppRelease.Notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}Put(releasePanel,new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled},1);
+  var body=new StackPanel();var date=T(AppRelease.Date+" · 修正版",10,Muted);date.Margin=new Thickness(0,0,0,8);body.Children.Add(date);foreach(string note in AppRelease.PatchNotes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}var previous=T("v0.1 · 2026-10-08 · 一号版本",11,Ink);previous.Margin=new Thickness(0,6,0,8);body.Children.Add(previous);foreach(string note in AppRelease.Notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}Put(releasePanel,new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled},1);
  }
  void OpenReleaseNotes(){ApplyFonts(releasePanel);ShowPage("release");}
 }
