@@ -1,0 +1,9 @@
+$ErrorActionPreference = 'Stop'
+$taskRoot = $PSScriptRoot
+$frameworkDir = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
+$wpfDir = Join-Path $frameworkDir 'WPF'
+$compilerPath = Join-Path $frameworkDir 'csc.exe'
+$buildArgs = @('/nologo', '/target:winexe', '/optimize+', '/platform:anycpu', ('/out:' + (Join-Path $taskRoot 'Touchfish.exe')), ('/reference:' + (Join-Path $wpfDir 'PresentationFramework.dll')), ('/reference:' + (Join-Path $wpfDir 'PresentationCore.dll')), ('/reference:' + (Join-Path $wpfDir 'WindowsBase.dll')), '/reference:System.Xaml.dll', '/reference:System.Web.Extensions.dll') + @(Get-ChildItem -LiteralPath (Join-Path $taskRoot 'src') -Filter '*.cs' | ForEach-Object { $_.FullName })
+& $compilerPath @buildArgs
+if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+Write-Output 'Built Touchfish.exe'

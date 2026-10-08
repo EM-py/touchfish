@@ -1,0 +1,94 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+namespace Touchfish {
+public sealed class MatchTarget {public int Seat,UnitId;public MatchTarget(){}public MatchTarget(int seat,int unitId=0){Seat=seat;UnitId=unitId;}public bool Hero{get{return UnitId==0;}}}
+public sealed class HandCard {public int Id;public string CardId;}
+public sealed class BattleUnit {
+ public int Id,Owner,BaseAttack,BaseHealth,BuffAttack,BuffHealth,DamageTaken,TempAttack,AttacksUsed,SummonTurn,FrozenTurn,DeathAnchor;
+ public string CardId,Race;public bool Taunt,Shield,Windfury,Charge,Poison,Stealth,Frozen,Silenced;
+ public int SpellDamage;public int MaxHealth{get{return Math.Max(1,BaseHealth+BuffHealth);}}public int Health{get{return MaxHealth-DamageTaken;}}
+}
+public sealed class MatchPlayer {
+ public string ClassId;public int Health=30,Armor,MaxMana,Mana,Overload,LockedMana,Fatigue,HeroAttacks,TempAttack,FrozenTurn;
+ public bool Frozen,PowerUsed;public string WeaponId;public int WeaponAttack,WeaponDurability;public bool WeaponWindfury;
+ public readonly List<string> Deck=new List<string>();public readonly List<HandCard> Hand=new List<HandCard>();public readonly List<BattleUnit> Board=new List<BattleUnit>();
+}
+public sealed class ActionResult {public bool Success;public string Message;}
+public sealed class EffectContext {public MatchEngine Game;public int Seat;public CardRecord Card;public MatchTarget Target;public BattleUnit Summoned;public bool Combo;}
+public sealed class CardEffect {public string Target="NONE";public Action<EffectContext> Apply;public Func<MatchEngine,int,string> Requirement;}
+public sealed class MatchEngine {
+ public readonly CardCatalog Catalog;public readonly MatchRules Rules;public readonly MatchPlayer[] Players=new MatchPlayer[]{new MatchPlayer(),new MatchPlayer()};
+ public readonly List<string> Log=new List<string>();public int Active,Turn=1,Winner=-2,CardsPlayed;public readonly int Seed;int nextId=1;readonly Random random;
+ public bool Finished{get{return Winner!=-2;}}
+ internal MatchEngine(CardCatalog catalog){Catalog=catalog;Rules=new MatchRules(catalog);Seed=0;random=new Random(0);}
+ public MatchEngine(CardCatalog catalog,DeckDocument first,DeckDocument second,int seed){
+  Catalog=catalog;Rules=new MatchRules(catalog);Seed=seed;random=new Random(seed);DeckRules.Validate(catalog,first,true);DeckRules.Validate(catalog,second,true);
+  if(new[]{first.ClassId,second.ClassId}.Any(c=>!new[]{"MAGE","WARRIOR","WARLOCK","ROGUE","PRIEST","PALADIN","HUNTER","SHAMAN","DRUID"}.Contains(c)))throw new InvalidOperationException("当前对战支持经典九职业。");
+  var documents=new[]{first,second};for(int seat=0;seat<2;seat++){var missing=documents[seat].Cards.Keys.Where(id=>!Rules.Supports(catalog.Card(id))).ToArray();if(missing.Length>0)throw new InvalidOperationException("卡组含未实现效果："+String.Join("、",missing.Take(4).Select(id=>catalog.Card(id).Name))+"。可选择基础练习卡组。");var p=Players[seat];p.ClassId=documents[seat].ClassId;foreach(var pair in documents[seat].Cards)for(int n=0;n<pair.Value;n++)p.Deck.Add(pair.Key);for(int n=p.Deck.Count-1;n>0;n--){int index=random.Next(n+1);string temp=p.Deck[n];p.Deck[n]=p.Deck[index];p.Deck[index]=temp;}}
+  Log.Add("对局开始 · 本地 test");Draw(0,3);Draw(1,4);Players[1].Hand.Add(new HandCard{Id=nextId++,CardId="GAME_COIN"});Players[0].MaxMana=Players[0].Mana=1;
+ }
+ public CardRecord Card(string id){if(id=="GAME_COIN")return new CardRecord{Id=id,BaseId=id,Name="幸运币",Type="SPELL",CardClass="NEUTRAL",Cost=0,Text="仅在本回合获得一个法力水晶。",Mechanics=new string[0]};if(id=="GAME_DAGGER")return new CardRecord{Id=id,BaseId=id,Name="英雄匕首",Type="WEAPON",Attack=1,Durability=2,Text="1点攻击，2点耐久。",Mechanics=new string[0]};return Catalog.Card(id);}
+ public BattleUnit Unit(MatchTarget target){return target==null||target.Hero?null:Players[target.Seat].Board.FirstOrDefault(m=>m.Id==target.UnitId);}
+ public int AttackValue(BattleUnit unit){int attack=unit.BaseAttack+unit.BuffAttack+unit.TempAttack;var board=Players[unit.Owner].Board;foreach(var aura in board.Where(m=>!m.Silenced&&m.Id!=unit.Id)){string id=Card(aura.CardId).BaseId;if(id=="CS2_122"||id=="NEW1_033")attack++;if(id=="DS1_175"&&unit.Race=="BEAST")attack++;if(id=="EX1_162"&&Math.Abs(board.IndexOf(aura)-board.IndexOf(unit))==1)attack++;}return Math.Max(0,attack);}
+ public int HeroAttack(int seat){return Math.Max(0,Players[seat].WeaponAttack+Players[seat].TempAttack);}
+ public int SpellPower(int seat){return Players[seat].Board.Where(m=>!m.Silenced).Sum(m=>m.SpellDamage);}
+ public string CanAttack(int seat,BattleUnit unit){if(Finished)return "对局已结束。";if(seat!=Active)return "当前不是你的回合。";if(unit==null||unit.Owner!=seat)return "请选择己方随从。";if(unit.Frozen)return "随从被冻结。";if(AttackValue(unit)<=0)return "攻击力为零。";if(unit.SummonTurn==Turn&&!unit.Charge)return "刚召唤的随从下回合才能攻击。";if(unit.AttacksUsed>=(unit.Windfury?2:1))return "本回合攻击次数已用完。";if(!unit.Silenced&&Has(Card(unit.CardId),"CANT_ATTACK"))return "该随从不能攻击。";return null;}
+ public string CanHeroAttack(int seat){var p=Players[seat];if(Finished)return "对局已结束。";if(seat!=Active)return "当前不是你的回合。";if(p.Frozen)return "英雄被冻结。";if(HeroAttack(seat)<=0)return "英雄没有攻击力。";if(p.HeroAttacks>=(p.WeaponWindfury?2:1))return "英雄本回合已攻击。";return null;}
+ public ActionResult Attack(int seat,int attackerId,MatchTarget target){return Act(()=>{
+  var attacker=attackerId==0?null:Players[seat].Board.FirstOrDefault(m=>m.Id==attackerId);Require(attackerId==0?CanHeroAttack(seat):CanAttack(seat,attacker));ValidateTarget(seat,target,"ENEMY_CHARACTER",false);
+  var victim=Unit(target);if(Players[1-seat].Board.Any(m=>m.Taunt&&!m.Stealth)&&(victim==null||!victim.Taunt))throw new InvalidOperationException("必须先攻击嘲讽随从。");
+  int outgoing=attacker==null?HeroAttack(seat):AttackValue(attacker),incoming=victim==null?0:AttackValue(victim);if(attacker==null){Players[seat].HeroAttacks++;if(CardOrNull(Players[seat].WeaponId)!=null&&Card(Players[seat].WeaponId).BaseId=="CS2_097")Heal(new MatchTarget(seat),2);}else{attacker.AttacksUsed++;attacker.Stealth=false;}
+  int dealt=Damage(target,outgoing);int received=incoming>0?Damage(new MatchTarget(seat,attackerId),incoming):0;
+  if(attacker!=null&&attacker.Poison&&dealt>0&&victim!=null)victim.DamageTaken=victim.MaxHealth;
+  if(victim!=null&&victim.Poison&&received>0&&attacker!=null)attacker.DamageTaken=attacker.MaxHealth;
+  if(attacker!=null&&!attacker.Silenced&&Card(attacker.CardId).BaseId=="CS2_033"&&dealt>0)Freeze(target);
+  if(victim!=null&&!victim.Silenced&&Card(victim.CardId).BaseId=="CS2_033"&&received>0)Freeze(new MatchTarget(seat,attackerId));
+  Log.Add("玩家 "+(seat+1)+" · "+(attacker==null?"英雄":Card(attacker.CardId).Name)+" → "+TargetLabel(target)+" · 伤害 "+dealt+(victim==null?"":" / 反击 "+received));if(attacker==null&&Players[seat].WeaponDurability>0&&--Players[seat].WeaponDurability==0)BreakWeapon(seat);Cleanup();
+ });}
+ public ActionResult Play(int seat,int handId,MatchTarget target=null,int position=-1){return Act(()=>{
+  RequireTurn(seat);var p=Players[seat];var hand=p.Hand.FirstOrDefault(c=>c.Id==handId);if(hand==null)throw new InvalidOperationException("手牌已不存在。");var card=Card(hand.CardId);if(!Rules.Supports(card))throw new InvalidOperationException("该卡效果尚未实现。");var effect=Rules.Effect(card);if(p.Mana<card.Cost)throw new InvalidOperationException("法力不足。");if(card.Type=="MINION"&&p.Board.Count>=7)throw new InvalidOperationException("战场已满七个随从。");if(effect.Requirement!=null)Require(effect.Requirement(this,seat));bool fizzle=card.Type=="MINION"&&effect.Target!="NONE"&&target==null&&!HasTargets(seat,effect.Target,false);if(effect.Target!="NONE"&&!fizzle)ValidateTarget(seat,target,effect.Target,card.Type=="SPELL");
+  string targetName=target==null?"":TargetLabel(target);bool combo=CardsPlayed>0;p.Mana-=card.Cost;p.Hand.Remove(hand);CardsPlayed++;BattleUnit minion=null;if(card.Type=="MINION")minion=Summon(seat,card.Id,position);if(card.Type=="WEAPON")Equip(seat,card.Id);Log.Add("玩家 "+(seat+1)+" · 使用 "+card.Name+"（"+card.Cost+"费）"+(minion==null?"":" · 第 "+(p.Board.IndexOf(minion)+1)+" 位")+(target==null?"":" → "+targetName));if(!fizzle)effect.Apply(new EffectContext{Game=this,Seat=seat,Card=card,Target=target,Summoned=minion,Combo=combo});p.Overload+=card.Overload;Cleanup();
+ });}
+ public bool PowerNeedsTarget(int seat){return Players[seat].ClassId=="MAGE"||Players[seat].ClassId=="PRIEST";}
+ public bool HasTargets(int seat,string mask,bool ability){foreach(var target in Characters(0).Concat(Characters(1)))try{ValidateTarget(seat,target,mask,ability);return true;}catch(InvalidOperationException){}return false;}
+ public ActionResult HeroPower(int seat,MatchTarget target=null){return Act(()=>{
+  RequireTurn(seat);var p=Players[seat];if(p.PowerUsed)throw new InvalidOperationException("本回合已使用英雄技能。");if(p.Mana<2)throw new InvalidOperationException("英雄技能需要两点法力。");if(PowerNeedsTarget(seat))ValidateTarget(seat,target,"ANY_CHARACTER",true);if(p.ClassId=="PALADIN"&&p.Board.Count>=7)throw new InvalidOperationException("战场已满。");string[] totems={"VAN_CS2_050","VAN_CS2_051","VAN_CS2_052","VAN_NEW1_009"};var eligible=totems.Where(id=>!p.Board.Any(m=>m.CardId==id)).ToArray();if(p.ClassId=="SHAMAN"&&(p.Board.Count>=7||eligible.Length==0))throw new InvalidOperationException("没有可召唤的基础图腾。");
+  p.Mana-=2;p.PowerUsed=true;Log.Add("玩家 "+(seat+1)+" · 英雄技能（2费）"+(target==null?"":" → "+TargetLabel(target)));switch(p.ClassId){case "MAGE":Damage(target,1);break;case "PRIEST":Heal(target,2);break;case "WARRIOR":p.Armor+=2;break;case "HUNTER":Damage(new MatchTarget(1-seat),2);break;case "WARLOCK":Draw(seat,1);Damage(new MatchTarget(seat),2);break;case "ROGUE":EquipRaw(seat,"GAME_DAGGER",1,2,false);break;case "PALADIN":Summon(seat,"VAN_CS2_101t");break;case "DRUID":p.TempAttack++;p.Armor++;break;case "SHAMAN":Summon(seat,eligible[random.Next(eligible.Length)]);break;default:throw new InvalidOperationException("该职业技能尚未实现。");}Cleanup();
+ });}
+ public ActionResult EndTurn(){return Act(()=>{
+  RequireTurn(Active);var p=Players[Active];if(p.Board.Any(m=>!m.Silenced&&Card(m.CardId).BaseId=="NEW1_009"))foreach(var unit in p.Board.ToArray())Heal(new MatchTarget(Active,unit.Id),1);
+  foreach(var player in Players){player.TempAttack=0;foreach(var unit in player.Board)unit.TempAttack=0;}
+  foreach(var unit in p.Board)if(unit.Frozen&&(unit.FrozenTurn<Turn||unit.AttacksUsed==0))unit.Frozen=false;if(p.Frozen&&(p.FrozenTurn<Turn||p.HeroAttacks==0))p.Frozen=false;
+  Active=1-Active;Turn++;CardsPlayed=0;p=Players[Active];p.MaxMana=Math.Min(10,p.MaxMana+1);p.LockedMana=p.Overload;p.Overload=0;p.Mana=Math.Max(0,p.MaxMana-p.LockedMana);p.PowerUsed=false;p.HeroAttacks=0;foreach(var unit in p.Board)unit.AttacksUsed=0;Draw(Active,1);Cleanup();Log.Add("第 "+((Turn+1)/2)+" 回合 · 轮到玩家 "+(Active+1));
+ });}
+ public void ValidateTarget(int seat,MatchTarget target,string mask,bool ability){
+  if(target==null||target.Seat<0||target.Seat>1)throw new InvalidOperationException("请选择一个目标。");var unit=Unit(target);if(!target.Hero&&unit==null)throw new InvalidOperationException("目标已离开战场。");if(target.Seat!=seat&&unit!=null&&unit.Stealth)throw new InvalidOperationException("不能指定敌方潜行随从。");if(ability&&unit!=null&&!unit.Silenced&&(Has(Card(unit.CardId),"CANT_BE_TARGETED_BY_ABILITIES")||Has(Card(unit.CardId),"ELUSIVE")))throw new InvalidOperationException("目标不能被法术或英雄技能指定。");
+  if(mask.Contains("MINION")&&unit==null)throw new InvalidOperationException("请选择随从目标。");if(mask.StartsWith("ENEMY")&&target.Seat==seat)throw new InvalidOperationException("请选择敌方目标。");if(mask.StartsWith("FRIENDLY")&&target.Seat!=seat)throw new InvalidOperationException("请选择己方目标。");if(mask=="UNDAMAGED_MINION"&&(unit==null||unit.DamageTaken!=0))throw new InvalidOperationException("只能指定未受伤的随从。");if(mask=="LOW_ATTACK"&&(unit==null||AttackValue(unit)>3))throw new InvalidOperationException("只能指定攻击力不超过3的随从。");if(mask=="HIGH_ATTACK"&&(unit==null||AttackValue(unit)<5))throw new InvalidOperationException("只能指定攻击力至少5的随从。");
+  if(mask=="ENEMY_DAMAGED_MINION"&&unit.DamageTaken==0)throw new InvalidOperationException("只能斩杀受伤的敌方随从。");
+ }
+ public BattleUnit Summon(int seat,string id,int position=-1){if(Players[seat].Board.Count>=7)return null;var card=Card(id);var unit=new BattleUnit{Id=nextId++,Owner=seat,CardId=id,BaseAttack=card.Attack,BaseHealth=card.Health,Race=card.Race,Taunt=Has(card,"TAUNT"),Shield=Has(card,"DIVINE_SHIELD"),Charge=Has(card,"CHARGE"),Windfury=Has(card,"WINDFURY"),Poison=Has(card,"POISONOUS")||card.BaseId=="EX1_170",Stealth=Has(card,"STEALTH"),SpellDamage=card.SpellDamage,SummonTurn=Turn};var board=Players[seat].Board;if(position<0||position>board.Count)position=board.Count;board.Insert(position,unit);return unit;}
+ public void Draw(int seat,int count){var p=Players[seat];int drawn=0;for(int i=0;i<count;i++){if(p.Deck.Count==0){Damage(new MatchTarget(seat),++p.Fatigue);Log.Add("玩家 "+(seat+1)+" · 疲劳伤害 "+p.Fatigue);continue;}string id=p.Deck[0];p.Deck.RemoveAt(0);if(p.Hand.Count<10){p.Hand.Add(new HandCard{Id=nextId++,CardId=id});drawn++;}else Log.Add("玩家 "+(seat+1)+" · 爆牌："+Card(id).Name);}if(drawn>0)Log.Add("玩家 "+(seat+1)+" · 抽牌 "+drawn+" 张");}
+ public int Damage(MatchTarget target,int amount){if(amount<=0)return 0;var unit=Unit(target);if(target.Hero){var p=Players[target.Seat];int armor=Math.Min(p.Armor,amount);p.Armor-=armor;p.Health-=amount-armor;return amount;}if(unit==null)return 0;if(unit.Shield){unit.Shield=false;return 0;}unit.DamageTaken+=amount;return amount;}
+ public void Heal(MatchTarget target,int amount){if(target.Hero)Players[target.Seat].Health=Math.Min(30,Players[target.Seat].Health+amount);else{var unit=Unit(target);if(unit!=null)unit.DamageTaken=Math.Max(0,unit.DamageTaken-amount);}}
+ public void Freeze(MatchTarget target){var unit=Unit(target);if(target.Hero){Players[target.Seat].Frozen=true;Players[target.Seat].FrozenTurn=Turn;}else if(unit!=null){unit.Frozen=true;unit.FrozenTurn=Turn;}}
+ public void Buff(MatchTarget target,int attack,int health){var unit=Unit(target);if(unit==null)return;unit.BuffAttack+=attack;unit.BuffHealth+=health;}
+ public void SetHealth(MatchTarget target,int value){var unit=Unit(target);if(unit==null)return;unit.BuffHealth=value-unit.BaseHealth;unit.DamageTaken=0;}
+ public void Silence(MatchTarget target){var unit=Unit(target);if(unit==null)return;int health=unit.Health;unit.Silenced=true;unit.BuffAttack=unit.BuffHealth=unit.TempAttack=0;unit.Taunt=unit.Shield=unit.Charge=unit.Windfury=unit.Poison=unit.Stealth=unit.Frozen=false;unit.SpellDamage=0;unit.DamageTaken=Math.Max(0,unit.MaxHealth-Math.Min(health,unit.MaxHealth));}
+ public void Transform(MatchTarget target,string id){var old=Unit(target);if(old==null)return;int position=Players[target.Seat].Board.IndexOf(old);Players[target.Seat].Board.Remove(old);Summon(target.Seat,id,position);}
+ public void ReturnToHand(MatchTarget target){var unit=Unit(target);if(unit==null)return;Players[target.Seat].Board.Remove(unit);if(Players[target.Seat].Hand.Count<10)Players[target.Seat].Hand.Add(new HandCard{Id=nextId++,CardId=unit.CardId});}
+ public void Equip(int seat,string id){var card=Card(id);EquipRaw(seat,id,card.Attack,card.Durability,Has(card,"WINDFURY"));}
+ public void EquipRaw(int seat,string id,int attack,int durability,bool windfury){var p=Players[seat];p.WeaponId=id;p.WeaponAttack=attack;p.WeaponDurability=durability;p.WeaponWindfury=windfury;}
+ public void BreakWeapon(int seat){var p=Players[seat];if(p.WeaponId!=null)Log.Add("玩家 "+(seat+1)+" · 武器移除："+Card(p.WeaponId).Name);p.WeaponId=null;p.WeaponAttack=p.WeaponDurability=0;p.WeaponWindfury=false;}
+ string TargetLabel(MatchTarget target){if(target.Hero)return "玩家 "+(target.Seat+1)+" 英雄";var unit=Unit(target);return unit==null?"随从":Card(unit.CardId).Name;}
+ public MatchTarget[] Characters(int seat,bool hero=true){var targets=Players[seat].Board.Select(m=>new MatchTarget(seat,m.Id)).ToList();if(hero)targets.Add(new MatchTarget(seat));return targets.ToArray();}
+ public MatchTarget RandomTarget(IEnumerable<MatchTarget> targets){var array=targets.ToArray();return array.Length==0?null:array[random.Next(array.Length)];}
+ public void Cleanup(){for(int wave=0;wave<32;wave++){var dead=Players.SelectMany(p=>p.Board).Where(m=>m.Health<=0).OrderBy(m=>m.Id).ToArray();if(dead.Length==0)break;foreach(var unit in dead){var board=Players[unit.Owner].Board;var anchor=board.Skip(board.IndexOf(unit)+1).FirstOrDefault(m=>m.Health>0);unit.DeathAnchor=anchor==null?0:anchor.Id;}foreach(var unit in dead){Log.Add("玩家 "+(unit.Owner+1)+" · 随从阵亡："+Card(unit.CardId).Name);Players[unit.Owner].Board.Remove(unit);}foreach(var unit in dead)if(!unit.Silenced)Rules.Death(this,unit);}if(Players[0].Health<=0&&Players[1].Health<=0)Winner=-1;else if(Players[0].Health<=0)Winner=1;else if(Players[1].Health<=0)Winner=0;}
+ public static bool Has(CardRecord card,string keyword){return card.Mechanics!=null&&card.Mechanics.Contains(keyword);}
+ CardRecord CardOrNull(string id){CardRecord card;return id!=null&&Catalog.Cards.TryGetValue(id,out card)?card:null;}
+ void RequireTurn(int seat){if(Finished)throw new InvalidOperationException("对局已结束。");if(seat!=Active)throw new InvalidOperationException("当前不是你的回合。");}
+ static void Require(string error){if(error!=null)throw new InvalidOperationException(error);}
+ ActionResult Act(Action action){try{action();if(Finished)Log.Add(Winner==-1?"对局结束 · 平局":"对局结束 · 玩家 "+(Winner+1)+" 获胜");return new ActionResult{Success=true,Message=Finished?(Winner==-1?"双方英雄同时阵亡，平局。":"玩家 "+(Winner+1)+" 获胜。"):"操作完成。"};}catch(InvalidOperationException ex){return new ActionResult{Success=false,Message=ex.Message};}}
+}
+}

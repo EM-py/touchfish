@@ -1,0 +1,12 @@
+/work/
+/previews/
+/decks/
+/_updates/
+/preferences.ini
+/Touchfish*.exe
+/*.zip
+/*.sha256
+/*error*.txt
+__pycache__/
+*.pyc
+*.tmp

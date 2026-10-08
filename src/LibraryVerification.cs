@@ -1,0 +1,47 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace Touchfish {
+public partial class PanelWindow {
+ void VerifyLibrary(string folder){
+  var pool=catalog.Pool("classic-2014");var playable=catalog.Deckable(pool);Check(playable.Count==382,"Complete classic pool");Check(catalog.Cards.Count==518,"Source and hero records imported");
+  Check(playable.Count(c=>c.CardClass=="NEUTRAL")==157,"Neutral count");foreach(var cls in Classes)Check(playable.Count(c=>c.CardClass==cls.Key)==25,"Class count");
+  Check(catalog.Card("VAN_EX1_116").Cost==4,"Historical Leeroy cost");Check(catalog.Card("VAN_EX1_308").Cost==0,"Historical Soulfire cost");Check(catalog.Card("VAN_CS2_237").Cost==2&&catalog.Card("VAN_CS2_237").Health==1,"Historical Buzzard");Check(catalog.Card("VAN_NEW1_019").Attack==3,"Historical Knife Juggler");Check(catalog.Card("VAN_CS2_106").Cost==2,"Historical Fiery War Axe");
+  Check(playable.All(c=>c.Name.Length>0&&c.DbfId>0&&c.BaseId.Length>0),"Card metadata");
+  var cases=new List<object>();foreach(var cls in Classes){var deck=ExampleDeck(cls.Key);string code=DeckCode.Encode(catalog,deck);var decoded=DeckCode.Decode(catalog,code,pool.Id);Check(decoded.ClassId==deck.ClassId&&SameDeck(deck,decoded),"Nine class round trip");var raw=DeckCode.DecodeRaw(code);Check(raw.Format==3&&raw.Hero==pool.HeroDbfIds[cls.Key],"Classic code header");cases.Add(new {Code=code,Hero=raw.Hero,Format=raw.Format,Cards=raw.Cards.ToDictionary(p=>p.Key.ToString(),p=>p.Value)});
+   var legacy=new RawDeckCode{Format=1,Hero=raw.Hero,Cards=deck.Cards.ToDictionary(p=>catalog.Card(p.Key).LegacyDbfId,p=>p.Value)};var aliasDecoded=DeckCode.Decode(catalog,DeckCode.EncodeRaw(legacy),pool.Id);Check(SameDeck(deck,aliasDecoded),"Legacy-ID import maps to frozen cards");}
+  JsonData.Write(Path.Combine(folder,"deckcode-reference-cases.json"),cases);
+  var reference=DeckCode.DecodeRaw("AAEBAQcAAAQBAwIDAwMEAw==");Check(reference.Hero==7&&reference.Format==1&&reference.Cards.Count==4&&reference.Cards.Values.All(n=>n==3),"HearthSim published reference vector");
+  var empty=new DeckDocument{PoolId=pool.Id};var fire=catalog.Card("VAN_CS2_029");empty.Cards[fire.Id]=2;Check(DeckRules.CanAdd(catalog,empty,fire)!=null,"Two-copy limit");var legend=playable.First(c=>c.Rarity=="LEGENDARY"&&c.CardClass=="NEUTRAL");empty.Cards[legend.Id]=1;Check(DeckRules.CanAdd(catalog,empty,legend)!=null,"Legendary limit");Check(DeckRules.CanAdd(catalog,empty,playable.First(c=>c.CardClass=="WARRIOR"))!=null,"Other class rejected");Check(DeckRules.CanAdd(catalog,empty,catalog.Cards.Values.First(c=>!c.Collectible))!=null,"Tokens rejected");
+  Reject(()=>DeckCode.Encode(catalog,empty),"Incomplete deck export");var complete=ExampleDeck("MAGE");Check(DeckRules.CanAdd(catalog,complete,fire)!=null,"Thirty-card cap");
+  foreach(var value in new[]{"", "not a code", "AAAA", "AAE=", new string('A',17000)})Reject(()=>DeckCode.Decode(catalog,value,pool.Id),"Malformed code rejected");
+  var badClass=complete.Copy();badClass.ClassId="WARRIOR";Reject(()=>DeckRules.Validate(catalog,badClass,true),"Cross-class validation");var badLegend=complete.Copy();badLegend.Cards[legend.Id]=2;Reject(()=>DeckRules.Validate(catalog,badLegend,false),"Legendary overflow");
+  var unknown=new RawDeckCode{Format=3,Hero=pool.HeroDbfIds["MAGE"],Cards=new Dictionary<int,int>{{999999,30}}};Reject(()=>DeckCode.Decode(catalog,DeckCode.EncodeRaw(unknown),pool.Id),"Unknown ID rejected");
+  var goodCode=DeckCode.Encode(catalog,complete);byte[] truncated=Convert.FromBase64String(goodCode);Reject(()=>DeckCode.Decode(catalog,Convert.ToBase64String(truncated.Take(8).ToArray()),pool.Id),"Truncated payload rejected");
+  var importedBlock=DeckCode.Decode(catalog,"### 经典法师\n# 说明\n"+goodCode,pool.Id);Check(importedBlock.Name=="经典法师"&&SameDeck(complete,importedBlock),"Comment block import");
+  var path=Path.Combine(folder,"draft-roundtrip.json");JsonData.Write(path,complete);var restored=JsonData.Read<DeckDocument>(path);DeckRules.Validate(catalog,restored,true);Check(SameDeck(complete,restored),"Draft file round trip");
+  VerifyExtension(folder);
+  draft=complete;draft.Name="经典法师";SyncDeckControls();RefreshDeck();ClearCodePanel();ShowPage("deck");ApplyTheme(false,false);ApplyMode(false);ShowDeckCard(fire);Render(Path.Combine(folder,"20-deck-wps-normal.png"));
+  searchBox.Text="火球";Check(filteredCards.Any(c=>c.Id==fire.Id)&&filteredCards.All(c=>(c.Name+" "+c.Text).Contains("火球")),"Name search");searchBox.Text="冻结";Check(filteredCards.Count>0&&filteredCards.All(c=>(c.Name+" "+c.Text).Contains("冻结")),"Effect search");searchBox.Text="";
+  costPicker.SelectedItem=((Choice[])costPicker.ItemsSource).First(c=>c.Key=="7");Check(filteredCards.All(c=>c.Cost>=7),"Cost filter");costPicker.SelectedIndex=0;typePicker.SelectedItem=((Choice[])typePicker.ItemsSource).First(c=>c.Key=="WEAPON");Check(filteredCards.All(c=>c.Type=="WEAPON"),"Type filter");typePicker.SelectedIndex=0;showAllCards.IsChecked=true;Check(filteredCards.Count==382,"Full pool browser");showAllCards.IsChecked=false;
+  ApplyTheme(true,true);ApplyMode(true);Render(Path.Combine(folder,"21-deck-codex-minimal.png"));Check(exportButton.IsEnabled&&saveDeckButton.IsEnabled,"Complete deck actions enabled");Check(deckPanel.ActualHeight>150,"Minimal deck page viewport");
+  ExportCode();Check(codeBox.Text==goodCode,"Export UI code");Render(Path.Combine(folder,"22-deck-code-export.png"));ClearCodePanel();ShowPage("deck");
+  ShowCodeUi(true,null);var before=draft.Copy();ImportCodeText("bad code");Check(SameDeck(before,draft)&&before.Id==draft.Id,"Failed import leaves draft unchanged");codeBox.Text=goodCode;Render(Path.Combine(folder,"23-deck-code-import.png"));ImportCodeText(goodCode);Check(draft.Count==30&&SameDeck(complete,draft),"Import UI applies validated code");
+  SaveFinishedDeck();Check(savedDecks.Any(d=>d.Code==goodCode),"Saved library stores code");ShowSavedDecks();Render(Path.Combine(folder,"24-saved-decks.png"));ClearCodePanel();ShowPage("deck");
+  draft=new DeckDocument();SyncDeckControls();RefreshDeck();Check(!exportButton.IsEnabled&&!saveDeckButton.IsEnabled,"Draft export disabled");AddCard(fire);Check(draft.Cards[fire.Id]==1,"Add UI");AddCard(fire);AddCard(fire);Check(draft.Cards[fire.Id]==2,"UI cannot add third copy");RemoveCard(fire);Check(draft.Cards[fire.Id]==1,"Remove UI");draft=complete;SyncDeckControls();RefreshDeck();ApplyTheme(true,false);Render(Path.Combine(folder,"25-deck-codex-light.png"));CheckNormalWeights(deckPanel);
+  JsonData.Write(Path.Combine(folder,"library-verification.json"),new {DeckableCards=382,ImportedRecords=518,NeutralCards=157,EachClass=25,ClassRoundTrips=9,ExpansionInterface=true,Scope="Collection and deck builder verification",Assertions=checks});
+ }
+ DeckDocument ExampleDeck(string classId){var pool=catalog.Pool("classic-2014");var deck=new DeckDocument{ClassId=classId,PoolId=pool.Id,Name="经典 "+ClassLabel(classId)};var cards=catalog.Deckable(pool);foreach(var card in cards.Where(c=>c.CardClass==classId&&c.Rarity!="LEGENDARY").Take(14))deck.Cards[card.Id]=2;var legendary=cards.First(c=>c.CardClass==classId&&c.Rarity=="LEGENDARY");deck.Cards[legendary.Id]=1;deck.Cards[cards.First(c=>c.CardClass=="NEUTRAL"&&c.Rarity=="LEGENDARY").Id]=1;DeckRules.Validate(catalog,deck,true);return deck;}
+ static bool SameDeck(DeckDocument a,DeckDocument b){return a.ClassId==b.ClassId&&a.PoolId==b.PoolId&&a.Cards.Count==b.Cards.Count&&a.Cards.All(p=>b.Cards.ContainsKey(p.Key)&&b.Cards[p.Key]==p.Value);}
+ void Reject(Action action,string reason){try{action();}catch(InvalidDataException){checks++;return;}throw new Exception("Expected rejection: "+reason);}
+ void VerifyExtension(string folder){
+  string testRoot=Path.Combine(folder,"extension-fixture");string setDir=Path.Combine(testRoot,"cardsets");Directory.CreateDirectory(setDir);foreach(string source in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"data","cardsets"),"*.json"))File.Copy(source,Path.Combine(setDir,Path.GetFileName(source)),true);
+  var custom=new CardRecord{Id="TEST_CARD_01",BaseId="TEST_CARD_01",Name="扩展接口测试牌",Text="测试数据，不属于内置卡池。",RawText="",DbfId=9000001,SetId="test-expansion",CardClass="NEUTRAL",Type="MINION",Rarity="COMMON",Collectible=true,Cost=1,Attack=1,Health=1};JsonData.Write(Path.Combine(setDir,"test-expansion.json"),new CardSetPackage{SchemaVersion=1,Id="test-expansion",Name="测试扩展",Version="1",Cards=new[]{custom}});
+  var basePool=catalog.Pool("classic-2014");var expanded=new PoolDefinition{Id="test-pool",Name="测试卡池",CardSetIds=new[]{"classic-2014","test-expansion"},DeckSize=30,CopyLimit=2,LegendaryLimit=1,DeckstringFormat=3,HeroDbfIds=new Dictionary<string,int>(basePool.HeroDbfIds)};var extra=new CardCatalog(new JsonDirectoryCardSetSource(setDir),new PoolFile{SchemaVersion=1,Pools=new[]{basePool,expanded}});Check(extra.Deckable(expanded).Count==383,"JSON expansion loads without code changes");Check(extra.Deckable(basePool).Count==382,"Expansion leaves classic pool unchanged");var document=new DeckDocument{PoolId=expanded.Id};Check(DeckRules.CanAdd(extra,document,extra.Card(custom.Id))==null,"Expanded card accepted in new pool");document.PoolId=basePool.Id;Check(DeckRules.CanAdd(extra,document,extra.Card(custom.Id))!=null,"Expanded card rejected from classic pool");
+ }
+}
+}

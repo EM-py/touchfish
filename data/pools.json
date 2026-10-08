@@ -1,0 +1,27 @@
+{
+  "SchemaVersion": 1,
+  "Pools": [
+    {
+      "Id": "classic-2014",
+      "Name": "经典 2014",
+      "CardSetIds": [
+        "classic-2014"
+      ],
+      "DeckSize": 30,
+      "CopyLimit": 2,
+      "LegendaryLimit": 1,
+      "DeckstringFormat": 3,
+      "HeroDbfIds": {
+        "WARRIOR": 7,
+        "SHAMAN": 1066,
+        "ROGUE": 930,
+        "PALADIN": 671,
+        "HUNTER": 31,
+        "DRUID": 274,
+        "WARLOCK": 893,
+        "MAGE": 637,
+        "PRIEST": 813
+      }
+    }
+  ]
+}
