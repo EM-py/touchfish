@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.1.1",Date="2026-10-08";
+ public const string Version="v0.2.0",Date="2026-10-08";
  public static readonly string[] PatchNotes={"修复玛里苟斯法术伤害：原先错误地增加 1，现在正确增加 5；沉默或离场后移除加成。","对方英雄区域显示手牌数量，随抽牌与出牌同步变化；不显示对方手牌内容。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
@@ -23,8 +23,8 @@ public static class AppRelease {
 public partial class PanelWindow {
  Grid releasePanel;Button releaseTab;
  void BuildReleaseNotes(){
-  releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);releasePanel.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));
-  var body=new StackPanel();var date=T(AppRelease.Date+" · 修正版",10,Muted);date.Margin=new Thickness(0,0,0,8);body.Children.Add(date);foreach(string note in AppRelease.PatchNotes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}var previous=T("v0.1 · 2026-10-08 · 一号版本",11,Ink);previous.Margin=new Thickness(0,6,0,8);body.Children.Add(previous);foreach(string note in AppRelease.Notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}Put(releasePanel,new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled},1);
+  releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
+  var body=new StackPanel();var date=T(AppRelease.Date+" · GitHub 更新版",10,Muted);date.Margin=new Thickness(0,0,0,8);body.Children.Add(date);foreach(string note in new[]{"接入 YuziPlus/touchfish 的 GitHub Releases：检查更新、下载校验、安装重启与历史版本回退。","个人卡组、草稿和设置保留；本地不长期保留旧版，历史版本仅存于 GitHub。","增加独立更新器，旧版回退后仍可重新升级；对局中阻止安装。"}){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}body.Children.Add(T("v0.1.1 · 2026-10-08 · 修正版",11,Ink));foreach(string note in AppRelease.PatchNotes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}var previous=T("v0.1 · 2026-10-08 · 一号版本",11,Ink);previous.Margin=new Thickness(0,6,0,8);body.Children.Add(previous);foreach(string note in AppRelease.Notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}Put(releasePanel,new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled},1);
  }
  void OpenReleaseNotes(){ApplyFonts(releasePanel);ShowPage("release");}
 }

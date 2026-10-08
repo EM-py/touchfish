@@ -1,6 +1,16 @@
-# Touchfish v0.1.1 · 经典局域网对战
+# Touchfish v0.2.0 · 经典局域网对战
 
-当前为 v0.1.1 修正版：修复玛里苟斯法术伤害 +5，新增对方手牌数量。初始正式版本 v0.1（2026-10-08）已由用户与朋友进行局域网实测，反馈可运行。上边栏“更新日志”保留各版本内容，完整记录见 CHANGELOG.md。
+当前为 v0.2.0 GitHub 更新版，包含 v0.1.1 的玛里苟斯法术伤害 +5 修复和对方手牌数量。初始正式版本 v0.1（2026-10-08）已由用户与朋友进行局域网实测，反馈可运行。上边栏“更新日志”保留各版本内容，完整记录见 CHANGELOG.md。
+
+## 更新与回退
+
+首次从 https://github.com/YuziPlus/touchfish/releases 下载 `Touchfish-v0.2.0-win.zip`，解压完整目录。之后在“更新日志 → 版本更新”点击“检查更新”，选择版本并下载；校验通过后点击“安装重启”。选择较早版本即可回退，历史程序包只保存在 GitHub。
+
+更新仅替换程序和内置牌库，卡组、草稿、preferences.ini 保留。安装期间临时保留恢复数据，成功或恢复完成后清理；本地不长期保存历史版本备份。对局中允许检查与下载，需结束对局或离开房间后再安装。安装失败自动恢复原版本；新版有启动检查。
+
+回退到 v0.1 / v0.1.1 后，旧主程序没有更新入口，但保留独立 `Touchfish.Update.exe`；关闭游戏后双击它，可从 GitHub 下载版本重新升级。双方联机需使用同一份版本包。
+
+源码仓库：https://github.com/YuziPlus/touchfish 。发布包与源代码分开，Releases 包不含个人卡组和设置。
 
 解压完整包，双击 Touchfish.exe。data 文件夹必须与程序同目录。Windows WPF 桌面程序，无需浏览器、Python 或现代 .NET SDK 来运行；需要 .NET Framework WPF 环境。
 
@@ -103,5 +113,8 @@ build.ps1 使用系统 .NET Framework 编译器。Python 只用于数据导入�
 - src/LanVerification.cs：两个 WPF 界面通过真实 TCP 通信的集成验证。
 - src/MatchRecords.cs：共享对局记录页面与手牌详情数值。
 - src/ReleaseNotes.cs、src/AssemblyInfo.cs：版本标识与应用内更新日志；完整记录见 CHANGELOG.md。
+- src/UpdateCore.cs、src/UpdateUi.cs：GitHub 更新、校验、安装事务与历史版本选择。
+- updater/Program.cs：独立安装/恢复程序；旧版回退后可双击管理版本。
+- scripts/make_release.py、scripts/publish.ps1：生成运行包和更新清单，验证后发布 GitHub Release；`.github/workflows/release.yml` 可在 Actions 中手动运行。
 
 Touchfish.exe --showcase 临时以 Codex 深色极简版打开局域网入口，不覆盖已保存设置。

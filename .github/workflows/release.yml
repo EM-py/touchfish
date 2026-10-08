@@ -1,0 +1,21 @@
+name: Publish Windows release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag matching VERSION, for example v0.2.1'
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, verify and publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: .\scripts\publish.ps1 -Tag $env:RELEASE_VERSION
