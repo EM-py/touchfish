@@ -29,7 +29,7 @@ public partial class PanelWindow {
   match=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),42,true);ApplyMode(false);ApplyTheme(true,true);RenderMatch();ShowPage("match");Render(Path.Combine(folder,"80-v040-mulligan-normal.png"));
   Check(Width==548&&Height==474&&liveUnits.Count==0&&livePanel.Children.OfType<ScrollViewer>().Any(v=>Grid.GetRow(v)==6),"Mulligan stays in the bottom normal hand region");
   ApplyMode(true);Render(Path.Combine(folder,"81-v040-mulligan-minimal.png"));Check(Width==392&&Height==300,"Mulligan preserves minimal window size");
-  match=MatchFixture();RenderMatch();emoteOpen=true;RenderMatch();Render(Path.Combine(folder,"82-v040-emotes-minimal.png"));Check(livePanel.Children.OfType<ScrollViewer>().Any(v=>Grid.GetRow(v)==6),"Hero dialogue stays in the bottom hand region");CheckNormalWeights(livePanel);emoteOpen=false;localTest=false;RenderMatch();
+  ApplyMode(false);match=MatchFixture();RenderMatch();emoteOpen=true;RenderMatch();Render(Path.Combine(folder,"82-v040-emotes-normal.png"));Check(livePanel.Children.OfType<ScrollViewer>().Any(v=>Grid.GetRow(v)==6),"Hero dialogue stays in the bottom hand region");CheckNormalWeights(livePanel);emoteOpen=false;localTest=false;RenderMatch();
   JsonData.Write(Path.Combine(folder,"v040-integration-verification.json"),new{Assertions=checks-before,Mulligan=true,SingleHoggerTrigger=true,OpponentPrivateDataHidden=true,Version="v0.4.0"});
  }
 }

@@ -209,7 +209,7 @@ public partial class PanelWindow : Window {
   Walk(shell,node=>{var border=node as Border;if(border!=null&&border.Tag is Entry)border.CornerRadius=new CornerRadius(codex?3:0);var button=node as Button;if(button!=null)button.Template=ButtonTemplate();});detailBorder.CornerRadius=new CornerRadius(codex?4:0);UpdateSettingButtons();if(match!=null)RenderMatch();
  }
  void ApplyMode(bool useMinimal){
-  minimal=useMinimal;MinWidth=minimal?392:548;MinHeight=minimal?300:474;Width=minimal?392:548;Height=minimal?300:474;
+  minimal=useMinimal;NotifyPresentation();MinWidth=minimal?392:548;MinHeight=minimal?300:474;Width=minimal?392:548;Height=minimal?300:474;
   double[] chrome=minimal?new double[]{22,20,20,1,-1,14}:new double[]{28,26,28,1,-1,20};for(int i=0;i<chrome.Length;i++)if(chrome[i]>=0)shell.RowDefinitions[i].Height=new GridLength(chrome[i]);
   main.Margin=new Thickness(minimal?4:8,0,minimal?4:8,0);double[] body=minimal?new double[]{0,30,-1,10,-1,30,34}:new double[]{16,54,-1,20,-1,54,64};for(int i=0;i<body.Length;i++)if(body[i]>=0)main.RowDefinitions[i].Height=new GridLength(body[i]);main.RowDefinitions[2].MinHeight=main.RowDefinitions[4].MinHeight=minimal?46:72;
   foreach(UIElement child in main.Children)if(Grid.GetRow(child)==0)child.Visibility=minimal?Visibility.Collapsed:Visibility.Visible;
@@ -223,7 +223,7 @@ public partial class PanelWindow : Window {
  void ApplyFonts(DependencyObject root){Walk(root,node=>{var text=node as TextBlock;if(text!=null&&text.Tag is double){text.FontSize=Math.Max(9,(double)text.Tag-(minimal?.5:0));text.FontWeight=FontWeights.Normal;}});}
  static void Walk(DependencyObject root,Action<DependencyObject> action){action(root);foreach(var child in LogicalTreeHelper.GetChildren(root)){var node=child as DependencyObject;if(node!=null)Walk(node,action);}}
  void RefreshSelection(){foreach(var row in rows)row.Background=row.Tag==selected?B("#EDF4F0"):heroSlots.Contains(row)?B("#F7F8FA"):B("#FFFFFF");}
- void SetFullEffects(bool enabled){fullEffects=enabled;UpdateSettingButtons();SyncMatchEffectsVisibility();if(match!=null)RenderMatch();}
+ void SetFullEffects(bool enabled){fullEffects=enabled;NotifyPresentation();if(!enabled&&matchEffects!=null)matchEffects.Clear();RefreshDeck();UpdateSettingButtons();SyncMatchEffectsVisibility();if(match!=null)RenderMatch();}
  string PreferencesPath{get{return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"preferences.ini");}}
  void SavePreferences(){if(previewRun)return;try{File.WriteAllText(PreferencesPath,"theme="+(codex?"codex":"wps")+"\r\nappearance="+(dark?"dark":"light")+"\r\nmode="+(minimal?"minimal":"normal")+"\r\neffects="+(fullEffects?"all":"off")+"\r\n");status.Text="外观设置已保存";}catch(IOException){status.Text="设置已生效，保存失败";}catch(UnauthorizedAccessException){status.Text="设置已生效，目录不可写";}}
  void LoadPreferences(){try{if(!File.Exists(PreferencesPath))return;string value=File.ReadAllText(PreferencesPath);fullEffects=value.Contains("effects=all");ApplyTheme(value.Contains("theme=codex"),value.Contains("appearance=dark"));ApplyMode(value.Contains("mode=minimal"));}catch(IOException){}catch(UnauthorizedAccessException){}}
@@ -261,7 +261,7 @@ public partial class PanelWindow : Window {
 public static class Program {
  [STAThread]public static void Main(string[] args){try{
   string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow();if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
-  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
+  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"||args[3]=="hero-visuals"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="hero-visuals")window.PreviewHeroVisualScope(args[1]);else if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
   app.Run(window);
  }catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"startup-error.txt"),ex.ToString());Environment.ExitCode=1;}
  }
