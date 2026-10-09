@@ -12,7 +12,7 @@ public partial class PanelWindow {
  int Inject(MatchEngine engine,string baseId,int seat=0){var hand=new HandCard{Id=testHandId++,CardId=baseId=="GAME_COIN"?baseId:"VAN_"+baseId};engine.Players[seat].Hand.Add(hand);return hand.Id;}
  void VerifyMatch(string folder){
   int before=checks;foreach(var cls in Classes){var document=matchRules.TrainingDeck(cls.Key);Check(document.Count==30&&document.Cards.All(p=>matchRules.Supports(catalog.Card(p.Key))),"Nine supported practice decks");}
-  VerifyMalygos();
+  VerifyMalygos();VerifyEnrage(folder);
   Check(matchRules.RegisteredIds.All(id=>id=="GAME_COIN"||catalog.Cards.Values.Any(c=>c.BaseId==id)),"Explicit rules reference real source card IDs");
   var game=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),19);Check(game.Players[0].Hand.Count==3&&game.Players[1].Hand.Count==5&&game.Players[1].Hand.Any(h=>h.CardId=="GAME_COIN"),"Opening hands and coin");Check(game.Players[0].Mana==1&&game.Players[1].Mana==0,"First-turn mana");
   game=MatchFixture();var attacker=game.Summon(0,"VAN_CS2_182");var defender=game.Summon(1,"VAN_CS2_179");Check(!game.Attack(0,attacker.Id,new MatchTarget(1,defender.Id)).Success&&attacker.AttacksUsed==0,"Summoning sickness");attacker.SummonTurn=0;Check(!game.Attack(0,attacker.Id,new MatchTarget(1)).Success&&attacker.AttacksUsed==0,"Taunt blocks face without consuming attack");Check(game.Attack(0,attacker.Id,new MatchTarget(1,defender.Id)).Success&&attacker.Health==2&&defender.Health==1,"Simultaneous combat damage");Check(!game.Attack(0,attacker.Id,new MatchTarget(1,defender.Id)).Success,"One attack per turn");
