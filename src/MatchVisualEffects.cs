@@ -1,0 +1,40 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+
+namespace Touchfish {
+public sealed class MatchVisualAnchor {public Rect Bounds;public FrameworkElement Element;public BitmapSource Snapshot;}
+public interface IMatchVisualEffects {
+ void Spell(MatchVisualEvent item);
+ void Damage(MatchVisualEvent item,MatchVisualAnchor anchor,TimeSpan delay);
+ void Clear();
+}
+// Office-style first renderer. Future renderers use the same public event interface.
+public sealed class OfficeMatchVisualEffects : IMatchVisualEffects {
+ readonly Canvas overlay;readonly FrameworkElement screen;readonly Brush ink,surface;readonly Func<bool> enabled;
+ public int SpellCount,FloatCount,CardShakeCount,ScreenShakeCount;
+ public OfficeMatchVisualEffects(Canvas canvas,FrameworkElement wholeScreen,Brush foreground,Brush background,Func<bool> canPlay){overlay=canvas;screen=wholeScreen;ink=foreground;surface=background;enabled=canPlay;}
+ static void Fade(FrameworkElement element,int duration,int delay,Action remove){var animation=new DoubleAnimationUsingKeyFrames{Duration=TimeSpan.FromMilliseconds(duration),BeginTime=TimeSpan.FromMilliseconds(delay)};animation.KeyFrames.Add(new DiscreteDoubleKeyFrame(1,KeyTime.FromPercent(0)));animation.KeyFrames.Add(new LinearDoubleKeyFrame(1,KeyTime.FromPercent(.55)));animation.KeyFrames.Add(new LinearDoubleKeyFrame(0,KeyTime.FromPercent(1)));animation.Completed+=(s,e)=>remove();element.BeginAnimation(UIElement.OpacityProperty,animation);}
+ static void Shake(FrameworkElement element,double amplitude,int delay){var move=new TranslateTransform();element.RenderTransform=move;var animation=new DoubleAnimationUsingKeyFrames{Duration=TimeSpan.FromMilliseconds(220),BeginTime=TimeSpan.FromMilliseconds(delay),FillBehavior=FillBehavior.Stop};double[] values={0,-amplitude,amplitude,-amplitude*.7,amplitude*.5,0};for(int n=0;n<values.Length;n++)animation.KeyFrames.Add(new LinearDoubleKeyFrame(values[n],KeyTime.FromPercent((double)n/(values.Length-1))));move.BeginAnimation(TranslateTransform.XProperty,animation);}
+ public void Spell(MatchVisualEvent item){if(!enabled())return;SpellCount++;var text=new TextBlock{Text="玩家 "+(item.Seat+1)+" 使用了 "+item.CardName,FontSize=10,FontWeight=FontWeights.Normal,Foreground=ink,TextAlignment=TextAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};var line=new Border{Child=text,Background=surface,Padding=new Thickness(5,2,5,2),MaxWidth=Math.Max(80,overlay.ActualWidth-24)};overlay.Children.Add(line);line.Measure(new Size(overlay.ActualWidth-24,30));Canvas.SetLeft(line,Math.Max(4,(overlay.ActualWidth-line.DesiredSize.Width)/2));Canvas.SetTop(line,Math.Max(22,overlay.ActualHeight/2-10));Fade(line,1000,0,()=>overlay.Children.Remove(line));}
+ public void Damage(MatchVisualEvent item,MatchVisualAnchor anchor,TimeSpan delay){if(!enabled()||item.Amount<=0||anchor==null)return;FloatCount++;int start=(int)delay.TotalMilliseconds;FrameworkElement target=anchor.Element;if(target==null&&anchor.Snapshot!=null){var ghost=new Image{Source=anchor.Snapshot,Width=anchor.Bounds.Width,Height=anchor.Bounds.Height};Canvas.SetLeft(ghost,anchor.Bounds.X);Canvas.SetTop(ghost,anchor.Bounds.Y);overlay.Children.Add(ghost);Fade(ghost,450,start,()=>overlay.Children.Remove(ghost));target=ghost;}
+  var number=new TextBlock{Text="−"+item.Amount,FontSize=12,FontWeight=FontWeights.Normal,Foreground=ink,Background=surface,Padding=new Thickness(3,1,3,1),Opacity=0};overlay.Children.Add(number);double x=anchor.Bounds.X+anchor.Bounds.Width/2-12,y=anchor.Bounds.Y+Math.Max(2,anchor.Bounds.Height/3);Canvas.SetLeft(number,Math.Max(0,Math.Min(overlay.ActualWidth-34,x)));Canvas.SetTop(number,Math.Max(0,y));var lift=new TranslateTransform();number.RenderTransform=lift;number.BeginAnimation(UIElement.OpacityProperty,null);lift.BeginAnimation(TranslateTransform.YProperty,new DoubleAnimation(0,-23,TimeSpan.FromMilliseconds(680)){BeginTime=delay,FillBehavior=FillBehavior.Stop});Fade(number,680,start,()=>overlay.Children.Remove(number));if(item.Amount>3&&target!=null){CardShakeCount++;Shake(target,2,start);}if(item.Amount>10){ScreenShakeCount++;Shake(screen,3,start);}}
+ public void Clear(){overlay.Children.Clear();screen.RenderTransform=Transform.Identity;}
+}
+public partial class PanelWindow {
+ Canvas matchEffectsCanvas;IMatchVisualEffects matchEffects;readonly MatchVisualCursor visualCursor=new MatchVisualCursor();
+ readonly Dictionary<string,FrameworkElement> visualTargets=new Dictionary<string,FrameworkElement>();readonly Dictionary<string,MatchVisualAnchor> previousVisualTargets=new Dictionary<string,MatchVisualAnchor>();
+ string visualAnchorSession;
+ string VisualKey(int seat,int id){return seat+":"+id;}
+ void BuildMatchEffects(){matchEffectsCanvas=new Canvas{IsHitTestVisible=false,ClipToBounds=true,Visibility=Visibility.Collapsed};Put(shell,matchEffectsCanvas,4);Panel.SetZIndex(matchEffectsCanvas,30);matchEffects=new OfficeMatchVisualEffects(matchEffectsCanvas,shell,Ink,B("#F7F8FA"),()=>!minimal&&currentPage=="match"&&!awaitHandoff);}
+ void CaptureMatchVisuals(){if(!minimal&&currentPage=="match")livePanel.UpdateLayout();previousVisualTargets.Clear();if(!minimal&&visualAnchorSession==match.VisualSession)foreach(var pair in visualTargets){var element=pair.Value;if(element.ActualWidth<1||element.ActualHeight<1)continue;var rect=element.TransformToVisual(matchEffectsCanvas).TransformBounds(new Rect(0,0,element.ActualWidth,element.ActualHeight));var bitmap=new RenderTargetBitmap(Math.Max(1,(int)Math.Ceiling(element.ActualWidth)),Math.Max(1,(int)Math.Ceiling(element.ActualHeight)),96,96,PixelFormats.Pbgra32);bitmap.Render(element);previousVisualTargets[pair.Key]=new MatchVisualAnchor{Bounds=rect,Snapshot=bitmap};}visualTargets.Clear();visualAnchorSession=match.VisualSession;}
+ void RegisterVisualTarget(int seat,int id,FrameworkElement target){visualTargets[VisualKey(seat,id)]=target;}
+ void SyncMatchEffectsVisibility(){if(matchEffectsCanvas==null)return;bool show=currentPage=="match"&&!minimal&&!awaitHandoff;matchEffectsCanvas.Visibility=show?Visibility.Visible:Visibility.Collapsed;if(!show)matchEffects.Clear();}
+ void PresentMatchVisuals(){var events=visualCursor.Take(match.VisualSession,match.VisualEvents,!minimal&&currentPage=="match"&&!awaitHandoff);SyncMatchEffectsVisibility();if(events.Length==0)return;var old=new Dictionary<string,MatchVisualAnchor>(previousVisualTargets);string session=match.VisualSession;Dispatcher.BeginInvoke(new Action(()=>{if(match==null||match.VisualSession!=session||minimal||currentPage!="match")return;UpdateLayout();var delays=new Dictionary<string,int>();foreach(var item in events){if(item.Kind=="spell"){matchEffects.Spell(item);continue;}if(item.Kind!="damage")continue;string key=VisualKey(item.Seat,item.UnitId);FrameworkElement element;MatchVisualAnchor anchor;old.TryGetValue(key,out anchor);visualTargets.TryGetValue(key,out element);if(anchor==null&&element!=null)anchor=new MatchVisualAnchor{Bounds=element.TransformToVisual(matchEffectsCanvas).TransformBounds(new Rect(0,0,element.ActualWidth,element.ActualHeight))};if(anchor==null)continue;anchor.Element=element;int hits;delays.TryGetValue(key,out hits);delays[key]=hits+1;matchEffects.Damage(item,anchor,TimeSpan.FromMilliseconds(80+hits*80));}}));}
+}
+}

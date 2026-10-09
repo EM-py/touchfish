@@ -19,7 +19,7 @@ public sealed class MatchPlayer {
 public sealed class ActionResult {public bool Success;public string Message;}
 public sealed class EffectContext {public MatchEngine Game;public int Seat;public CardRecord Card;public MatchTarget Target;public BattleUnit Summoned;public bool Combo;}
 public sealed class CardEffect {public string Target="NONE";public Action<EffectContext> Apply;public Func<MatchEngine,int,string> Requirement;}
-public sealed class MatchEngine {
+public sealed partial class MatchEngine {
  public readonly CardCatalog Catalog;public readonly MatchRules Rules;public readonly MatchPlayer[] Players=new MatchPlayer[]{new MatchPlayer(),new MatchPlayer()};
  public readonly List<string> Log=new List<string>();public int Active,Turn=1,Winner=-2,CardsPlayed;public readonly int Seed;int nextId=1;readonly Random random;
  public bool Finished{get{return Winner!=-2;}}
@@ -50,7 +50,7 @@ public sealed class MatchEngine {
  });}
  public ActionResult Play(int seat,int handId,MatchTarget target=null,int position=-1){return Act(()=>{
   RequireTurn(seat);var p=Players[seat];var hand=p.Hand.FirstOrDefault(c=>c.Id==handId);if(hand==null)throw new InvalidOperationException("手牌已不存在。");var card=Card(hand.CardId);if(!Rules.Supports(card))throw new InvalidOperationException("该卡效果尚未实现。");var effect=Rules.Effect(card);if(p.Mana<card.Cost)throw new InvalidOperationException("法力不足。");if(card.Type=="MINION"&&p.Board.Count>=7)throw new InvalidOperationException("战场已满七个随从。");if(effect.Requirement!=null)Require(effect.Requirement(this,seat));bool fizzle=card.Type=="MINION"&&effect.Target!="NONE"&&target==null&&!HasTargets(seat,effect.Target,false);if(effect.Target!="NONE"&&!fizzle)ValidateTarget(seat,target,effect.Target,card.Type=="SPELL");
-  string targetName=target==null?"":TargetLabel(target);bool combo=CardsPlayed>0;p.Mana-=card.Cost;p.Hand.Remove(hand);CardsPlayed++;BattleUnit minion=null;if(card.Type=="MINION")minion=Summon(seat,card.Id,position);if(card.Type=="WEAPON")Equip(seat,card.Id);Log.Add("玩家 "+(seat+1)+" · 使用 "+card.Name+"（"+card.Cost+"费）"+(minion==null?"":" · 第 "+(p.Board.IndexOf(minion)+1)+" 位")+(target==null?"":" → "+targetName));if(!fizzle)effect.Apply(new EffectContext{Game=this,Seat=seat,Card=card,Target=target,Summoned=minion,Combo=combo});p.Overload+=card.Overload;Cleanup();
+  string targetName=target==null?"":TargetLabel(target);bool combo=CardsPlayed>0;p.Mana-=card.Cost;p.Hand.Remove(hand);CardsPlayed++;if(card.Type=="SPELL")EmitVisual("spell",seat,name:card.Name);BattleUnit minion=null;if(card.Type=="MINION")minion=Summon(seat,card.Id,position);if(card.Type=="WEAPON")Equip(seat,card.Id);Log.Add("玩家 "+(seat+1)+" · 使用 "+card.Name+"（"+card.Cost+"费）"+(minion==null?"":" · 第 "+(p.Board.IndexOf(minion)+1)+" 位")+(target==null?"":" → "+targetName));if(!fizzle)effect.Apply(new EffectContext{Game=this,Seat=seat,Card=card,Target=target,Summoned=minion,Combo=combo});p.Overload+=card.Overload;Cleanup();
  });}
  public bool PowerNeedsTarget(int seat){return Players[seat].ClassId=="MAGE"||Players[seat].ClassId=="PRIEST";}
  public bool HasTargets(int seat,string mask,bool ability){foreach(var target in Characters(0).Concat(Characters(1)))try{ValidateTarget(seat,target,mask,ability);return true;}catch(InvalidOperationException){}return false;}
@@ -71,7 +71,7 @@ public sealed class MatchEngine {
  }
  public BattleUnit Summon(int seat,string id,int position=-1){if(Players[seat].Board.Count>=7)return null;var card=Card(id);var unit=new BattleUnit{Id=nextId++,Owner=seat,CardId=id,BaseAttack=card.Attack,BaseHealth=card.Health,Race=card.Race,Taunt=Has(card,"TAUNT"),Shield=Has(card,"DIVINE_SHIELD"),Charge=Has(card,"CHARGE"),Windfury=Has(card,"WINDFURY"),Poison=Has(card,"POISONOUS")||card.BaseId=="EX1_170",Stealth=Has(card,"STEALTH"),SpellDamage=card.SpellDamage,SummonTurn=Turn};var board=Players[seat].Board;if(position<0||position>board.Count)position=board.Count;board.Insert(position,unit);return unit;}
  public void Draw(int seat,int count){var p=Players[seat];int drawn=0;for(int i=0;i<count;i++){if(p.Deck.Count==0){Damage(new MatchTarget(seat),++p.Fatigue);Log.Add("玩家 "+(seat+1)+" · 疲劳伤害 "+p.Fatigue);continue;}string id=p.Deck[0];p.Deck.RemoveAt(0);if(p.Hand.Count<10){p.Hand.Add(new HandCard{Id=nextId++,CardId=id});drawn++;}else Log.Add("玩家 "+(seat+1)+" · 爆牌："+Card(id).Name);}if(drawn>0)Log.Add("玩家 "+(seat+1)+" · 抽牌 "+drawn+" 张");}
- public int Damage(MatchTarget target,int amount){if(amount<=0)return 0;var unit=Unit(target);if(target.Hero){var p=Players[target.Seat];int armor=Math.Min(p.Armor,amount);p.Armor-=armor;p.Health-=amount-armor;return amount;}if(unit==null)return 0;if(unit.Shield){unit.Shield=false;return 0;}unit.DamageTaken+=amount;return amount;}
+ public int Damage(MatchTarget target,int amount){if(amount<=0)return 0;var unit=Unit(target);if(target.Hero){var p=Players[target.Seat];int armor=Math.Min(p.Armor,amount);p.Armor-=armor;p.Health-=amount-armor;EmitVisual("damage",target.Seat,amount:amount);return amount;}if(unit==null)return 0;if(unit.Shield){unit.Shield=false;return 0;}unit.DamageTaken+=amount;EmitVisual("damage",target.Seat,unit.Id,Players[target.Seat].Board.IndexOf(unit),amount);return amount;}
  public void Heal(MatchTarget target,int amount){if(target.Hero)Players[target.Seat].Health=Math.Min(30,Players[target.Seat].Health+amount);else{var unit=Unit(target);if(unit!=null)unit.DamageTaken=Math.Max(0,unit.DamageTaken-amount);}}
  public void Freeze(MatchTarget target){var unit=Unit(target);if(target.Hero){Players[target.Seat].Frozen=true;Players[target.Seat].FrozenTurn=Turn;}else if(unit!=null){unit.Frozen=true;unit.FrozenTurn=Turn;}}
  public void Buff(MatchTarget target,int attack,int health){var unit=Unit(target);if(unit==null)return;unit.BuffAttack+=attack;unit.BuffHealth+=health;}
@@ -90,6 +90,6 @@ public sealed class MatchEngine {
  CardRecord CardOrNull(string id){CardRecord card;return id!=null&&Catalog.Cards.TryGetValue(id,out card)?card:null;}
  void RequireTurn(int seat){if(Finished)throw new InvalidOperationException("对局已结束。");if(seat!=Active)throw new InvalidOperationException("当前不是你的回合。");}
  static void Require(string error){if(error!=null)throw new InvalidOperationException(error);}
- ActionResult Act(Action action){try{action();if(Finished)Log.Add(Winner==-1?"对局结束 · 平局":"对局结束 · 玩家 "+(Winner+1)+" 获胜");return new ActionResult{Success=true,Message=Finished?(Winner==-1?"双方英雄同时阵亡，平局。":"玩家 "+(Winner+1)+" 获胜。"):"操作完成。"};}catch(InvalidOperationException ex){return new ActionResult{Success=false,Message=ex.Message};}}
+ ActionResult Act(Action action){try{visualAction++;action();if(Finished)Log.Add(Winner==-1?"对局结束 · 平局":"对局结束 · 玩家 "+(Winner+1)+" 获胜");return new ActionResult{Success=true,Message=Finished?(Winner==-1?"双方英雄同时阵亡，平局。":"玩家 "+(Winner+1)+" 获胜。"):"操作完成。"};}catch(InvalidOperationException ex){return new ActionResult{Success=false,Message=ex.Message};}}
 }
 }

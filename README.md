@@ -1,10 +1,16 @@
-# Touchfish v0.2.0 · 经典局域网对战
+# Touchfish v0.3.0 · 经典局域网对战
 
-当前为 v0.2.0 GitHub 更新版，包含 v0.1.1 的玛里苟斯法术伤害 +5 修复和对方手牌数量。初始正式版本 v0.1（2026-10-08）已由用户与朋友进行局域网实测，反馈可运行。上边栏“更新日志”保留各版本内容，完整记录见 CHANGELOG.md。
+当前为 v0.3.0 普通模式视觉效果版，保留此前局域网、GitHub 更新、玛里苟斯修复和对方手牌数量。上边栏“更新日志”保留各版本内容，完整记录见 CHANGELOG.md。运行目录只保留 Touchfish.exe 和 Touchfish.Update.exe 两个程序文件。
+
+普通模式双方可看到小字法术提示和伤害飘字；单次伤害 >3 震动目标，>10 同时震动整个界面。动画短促、颜色中性、正常字重，不改变窗口尺寸；极简模式仍保持安静。圣盾挡住的伤害不产生伤害飘字，连续小伤害不会累计触发大震动。
+
+扩展视觉效果使用 MatchVisualEvent 公开事件与 IMatchVisualEffects 渲染接口，模型无需引用 WPF。事件按序号去重，经局域网同步，死亡目标保留受击位置；后续可增加治疗、召唤等事件和其他渲染器。
 
 ## 更新与回退
 
-首次从 https://github.com/YuziPlus/touchfish/releases 下载 `Touchfish-v0.2.0-win.zip`，解压完整目录。之后在“更新日志 → 版本更新”点击“检查更新”，选择版本并下载；校验通过后点击“安装重启”。选择较早版本即可回退，历史程序包只保存在 GitHub。
+首次从 https://github.com/YuziPlus/touchfish/releases 下载对应版本完整包，解压整个目录。之后在“更新日志 → 版本更新”点击“检查更新”，选择版本并下载；校验通过后点击“安装重启”。选择较早版本即可回退，历史程序包只保存在 GitHub。
+
+检查版本优先读取 GitHub Releases 的 Atom 订阅，不依赖匿名 REST API 配额；订阅不可用时再使用 API。403 可能来自 API 限流或网络/代理限制，程序会显示各通道的完整错误。旧版若无法检查更新，请手动下载新版一次；此改动无法解除网络对所有 GitHub 域名的封锁。
 
 更新仅替换程序和内置牌库，卡组、草稿、preferences.ini 保留。安装期间临时保留恢复数据，成功或恢复完成后清理；本地不长期保存历史版本备份。对局中允许检查与下载，需结束对局或离开房间后再安装。安装失败自动恢复原版本；新版有启动检查。
 
@@ -112,6 +118,8 @@ build.ps1 使用系统 .NET Framework 编译器。Python 只用于数据导入�
 - src/LanUi.cs：创建/加入/离开房间、网络操作请求与双方固定视角。
 - src/LanVerification.cs：两个 WPF 界面通过真实 TCP 通信的集成验证。
 - src/MatchRecords.cs：共享对局记录页面与手牌详情数值。
+- src/MatchVisualEvents.cs、src/MatchVisualEffects.cs：结构化视觉事件、去重游标、效果渲染接口与普通模式动画。
+- src/VisualVerification.cs：效果阈值、网络同步、死亡目标和极简模式验证。
 - src/ReleaseNotes.cs、src/AssemblyInfo.cs：版本标识与应用内更新日志；完整记录见 CHANGELOG.md。
 - src/UpdateCore.cs、src/UpdateUi.cs：GitHub 更新、校验、安装事务与历史版本选择。
 - updater/Program.cs：独立安装/恢复程序；旧版回退后可双击管理版本。
