@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
 namespace Touchfish {
-public sealed class LanCommand {public string Kind,Session,Choice;public int Revision,RequestId,Source,Position=-1;public MatchTarget Target;}
+public sealed class LanCommand {public string Kind,Session,Choice,Emote;public int Revision,RequestId,Source,Position=-1;public int[] SelectedHandIds;public MatchTarget Target;}
 public sealed class LanPlayerView {public MatchPlayer Public;public BattleUnit[] Board;public HandCard[] Hand;public int HandCount,DeckCount;}
 public sealed class LanState {public string Session;public int Revision,Active,Turn,Winner,CardsPlayed;public LanPlayerView[] Players;public string[] Log;public string VisualSession;public MatchVisualEvent[] VisualEvents;}
 public sealed class LanMessage {public string Kind,Fingerprint,Code,PoolId,Message;public int Protocol=1,ReplyId;public bool Success;public LanCommand Command;public LanState State;}
@@ -30,7 +30,7 @@ public static class LanProtocol {
 public sealed class LanHostGame {
  public readonly MatchEngine Game;public readonly string Session=Guid.NewGuid().ToString("N");public int Revision;
  public LanHostGame(CardCatalog catalog,DeckDocument host,DeckDocument guest,int seed){Game=new MatchEngine(catalog,host,guest,seed);Game.Log[0]="局域网对局开始";}
- public ActionResult Execute(int seat,LanCommand command){if(command==null||command.Session!=Session||command.Revision!=Revision)return Fail("状态已更新，请重新操作。");if(seat!=Game.Active)return Fail("当前不是你的回合。");if(command.Target!=null&&(command.Target.Seat<0||command.Target.Seat>1||command.Target.UnitId<0)||command.Source<0||command.Position< -1||command.Position>7)return Fail("操作参数无效。");ActionResult result;switch(command.Kind){case "play":result=Game.Play(seat,command.Source,command.Target,command.Position,command.Choice);break;case "attack":result=Game.Attack(seat,command.Source,command.Target);break;case "power":result=Game.HeroPower(seat,command.Target);break;case "end":result=Game.EndTurn();break;default:return Fail("未知操作。");}if(result.Success)Revision++;return result;}
+ public ActionResult Execute(int seat,LanCommand command){if(command==null||command.Session!=Session||command.Revision!=Revision)return Fail("状态已更新，请重新操作。");if(command.Target!=null&&(command.Target.Seat<0||command.Target.Seat>1||command.Target.UnitId<0)||command.Source<0||command.Position< -1||command.Position>7)return Fail("操作参数无效。");ActionResult result;if(command.Kind=="mulligan")result=Game.Mulligan(seat,command.SelectedHandIds);else if(command.Kind=="emote")result=Game.Emote(seat,command.Emote);else{if(seat!=Game.Active)return Fail("当前不是你的回合。");switch(command.Kind){case "play":result=Game.Play(seat,command.Source,command.Target,command.Position,command.Choice);break;case "attack":result=Game.Attack(seat,command.Source,command.Target);break;case "power":result=Game.HeroPower(seat,command.Target);break;case "end":result=Game.EndTurn();break;default:return Fail("未知操作。");}}if(result.Success)Revision++;return result;}
  static ActionResult Fail(string text){return new ActionResult{Message=text};}
  public LanMessage Snapshot(ActionResult result=null,int replyId=0){return new LanMessage{Kind="state",State=LanProtocol.View(Game,1,Session,Revision),ReplyId=replyId,Success=result==null||result.Success,Message=result==null?"局域网对局已连接。":result.Message};}
 }

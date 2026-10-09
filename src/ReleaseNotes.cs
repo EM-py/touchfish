@@ -4,8 +4,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.3.7",Date="2026-10-09";
- public static readonly string[] PatchNotes={"新增六张圣骑士卡牌效果：提里奥·弗丁、神恩术、银色保卫者、神圣愤怒、智慧祝福和奥尔多卫士。","组牌页标注每张卡牌的品质：普通、稀有、史诗或传说；基础卡归入普通，对战中不显示品质。","对战支持数量增至 204 / 382。"};
+ public const string Version="v0.3.8",Date="2026-10-09";
+ public static readonly string[] PatchNotes={"新增先手 3 张、后手 4 张的起手换牌；双方各自确认后开局，后手获得幸运币。","点击己方英雄可选择开场白、感谢、称赞、问候、抱歉、失误、威胁和认输等对话；局域网双方同步。","实现凯恩·血蹄亡语、火车王冲锋与敌方两个 1/1 龙宝宝、希尔瓦娜斯随机夺取敌方随从。","对战支持数量增至 207 / 382。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -25,6 +25,7 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
+  body.Children.Add(ReleaseSection("v0.3.8",AppRelease.Date,AppRelease.PatchNotes));
   body.Children.Add(ReleaseSection("v0.3.7",AppRelease.Date,new[]{"新增六张圣骑士卡牌效果：提里奥·弗丁、神恩术、银色保卫者、神圣愤怒、智慧祝福和奥尔多卫士。","组牌页标注每张卡牌的品质：普通、稀有、史诗或传说；基础卡归入普通，对战中不显示品质。","对战支持数量增至 204 / 382。"}));
   body.Children.Add(ReleaseSection("v0.3.6","2026-10-09",new[]{"实现 10 张经典抉择卡：打出后从两张卡牌样式选项中选择对应效果。","抉择随从可先安放位置再选择效果；目标型抉择与战吼均需选目标。","结算前右键当前手牌可撤销待完成的出牌，卡牌仍留在手牌且不消耗法力；场上待出牌预览飞回手牌的动画只在操作者本机显示。","新增霍格回合结束时召唤 2/2 嘲讽豺狼人，以及哈里森·琼斯摧毁敌方武器并按剩余耐久抽牌。","对战支持数量增至 198 / 382。"}));
   body.Children.Add(ReleaseSection("v0.3.5","2026-10-09",new[]{"组牌增加职业与中立筛选，新增鱼人猎潮者、剃刀猎手和白银之手骑士召唤战吼。","普通模式弃牌后显示牌名飘字，持续 2.5 秒，不受“特效全开”开关影响；多张弃牌分行显示。","弃牌飘字通过公开结构化事件同步双方并去重，极简模式不显示。","本地 test 无需满 30 张牌即可开局，职业、数量上限与效果支持限制保留；局域网仍要求完整卡组。"}));
