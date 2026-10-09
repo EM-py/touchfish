@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.3.2",Date="2026-10-09";
+ public const string Version="v0.3.1",Date="2026-10-09";
  public static readonly string[] PatchNotes={"修复玛里苟斯法术伤害：原先错误地增加 1，现在正确增加 5；沉默或离场后移除加成。","对方英雄区域显示手牌数量，随抽牌与出牌同步变化；不显示对方手牌内容。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
@@ -17,29 +18,24 @@ public static class AppRelease {
   "外观：WPS 与 Codex 风格，普通 / 极简模式；极简只显示攻、效果、血与详情入口。Codex 深色背景 #0D1117，文字 #E6EDF3。",
   "本地测试：仅从顶栏小 test 按钮进入自对战，正常对战入口为局域网。",
   "联机试运行：用户与朋友已实测，反馈可以运行。",
-  "当前范围：180 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
+  "当前范围：174 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
  };
 }
 public partial class PanelWindow {
  Grid releasePanel;Button releaseTab;
  void BuildReleaseNotes(){
-  releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
+  releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);
+  var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.3.2",AppRelease.Date,new[]{
-   "新增经典六张激怒牌，受伤时获得攻击、风怒或武器加攻；完全治疗、沉默或离场后移除对应加成。对战支持数量为 180 / 382。",
-   "设置增加“特效全开”：普通模式可启用金色传说随从名字、生效中的红色激怒标记和震动，默认关闭。",
-   "普通模式始终显示法术提示与伤害飘字，伤害飘字延长至 1 秒；极简模式不显示任何特效。",
-   "更新日志按版本折叠，点击版本号展开详细内容。"}));
-  body.Children.Add(ReleaseSection("v0.3.1","2026-10-09",new[]{"本地 test 双方开局 10 个满水晶；小“取”按钮从己方剩余牌库指定取牌，手牌上限十张。","普通模式伤害飘字延长至 0.8 秒。"}));
-  body.Children.Add(ReleaseSection("v0.3.0","2026-10-09",new[]{"普通模式新增双方共享的法术提示、伤害飘字；单次伤害大于3震动目标，大于10同时震动整个界面。","视觉事件独立于规则与记录，经局域网同步并去重；极简模式不播放动画。","检查更新优先读取 GitHub 版本订阅，失败时使用 API，改善403错误说明。","运行目录仅保留 Touchfish.exe 和 Touchfish.Update.exe，清理已结束的临时更新器。"}));
-  body.Children.Add(ReleaseSection("v0.2.0","2026-10-08",new[]{"接入 GitHub Releases：检查更新、下载校验、安装重启与历史版本回退。","个人卡组、草稿和设置保留；本地不长期保留旧版，历史版本仅存于 GitHub。","增加独立更新器，旧版回退后仍可重新升级；对局中阻止安装。"}));
-  body.Children.Add(ReleaseSection("v0.1.1","2026-10-08",AppRelease.PatchNotes));
-  body.Children.Add(ReleaseSection("v0.1","2026-10-08",AppRelease.Notes));
+  ReleaseSection(body,AppRelease.Version+" · "+AppRelease.Date,new[]{"组牌页可筛选本职业卡、中立卡或两者；“全库”仍可浏览其他职业卡。","鱼人猎潮者、剃刀猎手和白银之手骑士的战吼可召唤衍生随从，并遵守七个随从位上限。"});
+  ReleaseSection(body,"v0.3.0 · 2026-10-09 · 普通模式视觉效果",new[]{"普通模式新增双方共享的法术提示、伤害飘字；单次伤害大于3震动目标，大于10同时震动整个界面。","视觉事件独立于规则与记录，经局域网同步并去重；极简模式不播放动画。","修复检查更新对 GitHub API 的依赖：优先读取版本订阅，失败时使用 API，改善403错误说明。","运行目录仅保留 Touchfish.exe 和 Touchfish.Update.exe，清理已结束的临时更新器。"});
+  ReleaseSection(body,"v0.2.0 · 2026-10-08 · GitHub 更新版",new[]{"接入 YuziPlus/touchfish 的 GitHub Releases：检查更新、下载校验、安装重启与历史版本回退。","个人卡组、草稿和设置保留；本地不长期保留旧版，历史版本仅存于 GitHub。","增加独立更新器，旧版回退后仍可重新升级；对局中阻止安装。"});
+  ReleaseSection(body,"v0.1.1 · 2026-10-08 · 修正版",AppRelease.PatchNotes);
+  var previous=T("v0.1 · 2026-10-08 · 一号版本",11,Ink);previous.Margin=new Thickness(0,6,0,8);body.Children.Add(previous);
+  foreach(string note in AppRelease.Notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}
   Put(releasePanel,new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled},1);
-
  }
- Expander ReleaseSection(string version,string date,string[] notes){var content=new StackPanel{Margin=new Thickness(18,4,4,6)};content.Children.Add(T(date,9,Muted));foreach(string note in notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,4,0,4);content.Children.Add(text);}return new Expander{Header=T(version,11,Ink),Content=content,IsExpanded=false,FontWeight=FontWeights.Normal,Foreground=Ink,Margin=new Thickness(0,0,0,6),HorizontalContentAlignment=HorizontalAlignment.Stretch};}
- void RenderExpandedRelease(string folder){var scroll=(ScrollViewer)releasePanel.Children[1];var body=(StackPanel)scroll.Content;var first=(Expander)body.Children[0];first.IsExpanded=true;Render(System.IO.Path.Combine(folder,"62-release-expanded.png"));first.IsExpanded=false;}
+ void ReleaseSection(StackPanel body,string title,IEnumerable<string> notes){var heading=T(title,11,Ink);heading.Margin=new Thickness(0,0,0,6);body.Children.Add(heading);foreach(string note in notes){var text=T(note,10,Ink);text.TextWrapping=TextWrapping.Wrap;text.Margin=new Thickness(0,0,0,8);body.Children.Add(text);}}
  void OpenReleaseNotes(){ApplyFonts(releasePanel);ShowPage("release");}
 }
 }
