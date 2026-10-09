@@ -17,7 +17,7 @@ public static class AppRelease {
   "外观：WPS 与 Codex 风格，普通 / 极简模式；极简只显示攻、效果、血与详情入口。Codex 深色背景 #0D1117，文字 #E6EDF3。",
   "本地测试：仅从顶栏小 test 按钮进入自对战，正常对战入口为局域网。",
   "联机试运行：用户与朋友已实测，反馈可以运行。",
-  "当前范围：186 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
+  "当前范围：197 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
  };
 }
 public partial class PanelWindow {
@@ -25,7 +25,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.3.5",AppRelease.Date,new[]{"组牌增加职业与中立筛选，新增鱼人猎潮者、剃刀猎手和白银之手骑士召唤战吼。","普通模式弃牌后显示牌名飘字，持续 2.5 秒，不受“特效全开”开关影响；多张弃牌分行显示。","弃牌飘字通过公开结构化事件同步双方并去重，极简模式不显示。","本地 test 无需满 30 张牌即可开局，职业、数量上限与效果支持限制保留；局域网仍要求完整卡组。"}));
+  body.Children.Add(ReleaseSection("未发布 · 光环",AppRelease.Date,new[]{"补齐经典十四张光环牌的持续属性、冲锋、减费与加费效果；来源沉默或离场后动态移除，手牌展示实际费用。","支持鱼人双方光环、相邻位置更新和生命光环移除后的生命上限调整。可对战牌为 197 / 382。"}));
+  body.Children.Add(ReleaseSection("v0.3.5","2026-10-09",new[]{"组牌增加职业与中立筛选，新增鱼人猎潮者、剃刀猎手和白银之手骑士召唤战吼。","普通模式弃牌后显示牌名飘字，持续 2.5 秒，不受“特效全开”开关影响；多张弃牌分行显示。","弃牌飘字通过公开结构化事件同步双方并去重，极简模式不显示。","本地 test 无需满 30 张牌即可开局，职业、数量上限与效果支持限制保留；局域网仍要求完整卡组。"}));
   body.Children.Add(ReleaseSection("v0.3.4","2026-10-09",new[]{"卡组绑定职业，选择已保存卡组或当前编辑卡组后自动切换并锁定职业；基础练习卡组按所选职业生成。","出牌与 test 取牌增加职业限制，只能使用本职业和中立牌；卡组导入、导出和开局继续校验职业。","组牌关键词搜索整个卡池，其他职业牌可查看但不能加入；支持多关键词，无结果时提示检查费用与类型筛选。"}));
   body.Children.Add(ReleaseSection("v0.3.3","2026-10-09",new[]{"增加统一手牌弃牌结算，支持灵魂之火、魔犬、末日守卫和死亡之翼；随机弃牌不重复选择，手牌不足时弃掉现有牌。","房主结算随机结果，双方共享被弃掉的牌名，剩余手牌保密；死亡之翼的亡语抽牌在弃牌完成后结算。","可对战卡牌增加至 183 / 382；追踪术仍待牌库选择机制实现。"}));
   body.Children.Add(ReleaseSection("v0.3.2","2026-10-09",new[]{
