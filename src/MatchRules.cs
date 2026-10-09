@@ -50,6 +50,8 @@ public sealed class MatchRules {
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
   Register("CS2_097","NONE",c=>{});
+  Register("NEW1_040","NONE",c=>{});
+  Register("EX1_558","NONE",c=>{var opponent=c.Game.Players[1-c.Seat];int durability=opponent.WeaponDurability;if(opponent.WeaponId!=null&&durability>0){c.Game.BreakWeapon(1-c.Seat);c.Game.Draw(c.Seat,durability);}});
   foreach(string id in new[]{"EX1_154","EX1_155","EX1_160","EX1_164","EX1_165","EX1_166","EX1_178","EX1_573","NEW1_007","NEW1_008"})Register(id,"NONE",ApplyChoice);
  }
  public bool IsChoice(CardRecord card){return card!=null&&Choices(card).Length==2;}
