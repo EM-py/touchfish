@@ -41,9 +41,9 @@ public partial class PanelWindow {
  }
  void PublishLan(ActionResult result=null,int replyId=0){if(lanPeer==null||!lanPeer.Send(lanAuthority.Snapshot(result,replyId)))DisconnectLan("发送失败。");}
  bool CanMatchInput(){return match!=null&&!match.Finished&&!awaitHandoff&&(!lanMode||lanReady&&!lanWaiting&&match.Active==matchViewSeat);}
- void DoMatch(string kind,int source=0,MatchTarget target=null,int position=-1){
-  if(lanMode){if(!CanMatchInput()){status.Text=!lanReady?"连接已断开，请重新建房。":lanWaiting?"等待同步。":"等待对方操作。";return;}var command=new LanCommand{Kind=kind,Source=source,Target=target,Position=position,Session=lanSession,Revision=lanRevision,RequestId=++lanRequestId};if(lanIsHost){var result=lanAuthority.Execute(0,command);lanRevision=lanAuthority.Revision;PublishLan(result);ApplyMatchAction(result);}else{lanWaiting=true;lanPendingRequest=command.RequestId;if(lanPeer==null||!lanPeer.Send(new LanMessage{Kind="command",Command=command})){DisconnectLan("发送失败。");return;}RenderMatch();status.Text="等待同步。";}return;}
-  ActionResult local;switch(kind){case "play":local=match.Play(matchViewSeat,source,target,position);break;case "attack":local=match.Attack(matchViewSeat,source,target);break;case "power":local=match.HeroPower(matchViewSeat,target);break;default:local=match.EndTurn();if(local.Success&&!match.Finished)awaitHandoff=true;break;}ApplyMatchAction(local);
+ void DoMatch(string kind,int source=0,MatchTarget target=null,int position=-1,string choice=null){
+  if(lanMode){if(!CanMatchInput()){status.Text=!lanReady?"连接已断开，请重新建房。":lanWaiting?"等待同步。":"等待对方操作。";return;}var command=new LanCommand{Kind=kind,Source=source,Target=target,Position=position,Choice=choice,Session=lanSession,Revision=lanRevision,RequestId=++lanRequestId};if(lanIsHost){var result=lanAuthority.Execute(0,command);lanRevision=lanAuthority.Revision;PublishLan(result);ApplyMatchAction(result);}else{lanWaiting=true;lanPendingRequest=command.RequestId;if(lanPeer==null||!lanPeer.Send(new LanMessage{Kind="command",Command=command})){DisconnectLan("发送失败。");return;}RenderMatch();status.Text="等待同步。";}return;}
+  ActionResult local;switch(kind){case "play":local=match.Play(matchViewSeat,source,target,position,choice);break;case "attack":local=match.Attack(matchViewSeat,source,target);break;case "power":local=match.HeroPower(matchViewSeat,target);break;default:local=match.EndTurn();if(local.Success&&!match.Finished)awaitHandoff=true;break;}ApplyMatchAction(local);
  }
  string LanTurnHint(){return !lanReady?"连接已断开":lanWaiting?"同步中…":match.Active==matchViewSeat?"我的回合":"对方回合";}
 }

@@ -37,6 +37,7 @@ public sealed class MatchRules {
   Register("CS1_112","NONE",c=>{Area(c,1-c.Seat,2,true);foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_621","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.Heal(target,4);});Register("EX1_624","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Heal(new MatchTarget(c.Seat),5);});Register("EX1_626","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Silence(target);c.Game.Draw(c.Seat,1);});
   Register("CS2_105","NONE",c=>c.Game.Players[c.Seat].TempAttack+=4);Register("EX1_606","NONE",c=>{c.Game.Players[c.Seat].Armor+=5;c.Game.Draw(c.Seat,1);});Register("EX1_400","NONE",c=>{Area(c,0,1,false);Area(c,1,1,false);});Register("CS2_108","ENEMY_DAMAGED_MINION",Kill,(g,s)=>null);
   Register("EX1_391","MINION",c=>{Hit(c,2);if(c.Game.Unit(c.Target).Health>0)c.Game.Draw(c.Seat,1);});Register("EX1_408","ANY_CHARACTER",c=>Hit(c,c.Game.Players[c.Seat].Health<=12?6:4));Register("EX1_410","MINION",c=>Hit(c,c.Game.Players[c.Seat].Armor));Register("EX1_607","MINION",c=>{Hit(c,1);c.Game.Buff(c.Target,2,0);});Register("CS2_103","FRIENDLY_MINION",c=>{c.Game.Buff(c.Target,2,0);c.Game.Unit(c.Target).Charge=true;});
+  Register("EX1_562","NONE",c=>c.Game.SummonAround(c.Seat,c.Summoned,"GAME_WHELP"));
   // Battlecries are explicit and do not inherit spell damage bonuses.
   Register("EX1_506","NONE",c=>c.Game.Summon(c.Seat,"VAN_EX1_506a",c.Game.Players[c.Seat].Board.IndexOf(c.Summoned)+1));
   Register("CS2_196","NONE",c=>c.Game.Summon(c.Seat,"VAN_CS2_boar",c.Game.Players[c.Seat].Board.IndexOf(c.Summoned)+1));
@@ -47,10 +48,40 @@ public sealed class MatchRules {
   Register("EX1_046","MINION",c=>c.Game.Unit(c.Target).TempAttack+=2);Register("CS2_188","MINION",c=>c.Game.Unit(c.Target).TempAttack+=2);Register("EX1_603","MINION",c=>{c.Game.Damage(c.Target,1);c.Game.Buff(c.Target,2,0);});Register("EX1_319","NONE",c=>c.Game.Damage(new MatchTarget(c.Seat),3));
   Register("DS1_055","NONE",c=>{foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_583","NONE",c=>c.Game.Heal(new MatchTarget(c.Seat),4));Register("EX1_593","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),3));
   foreach(string id in new[]{"EX1_170","EX1_556","EX1_096","EX1_029","EX1_012","CS2_033","EX1_162","CS2_122","DS1_175"})Register(id,"NONE",c=>{});
+  foreach(string id in GiantRules.Ids)Register(id,"NONE",c=>{});
+  foreach(string id in AuraRules.Ids)Register(id,"NONE",c=>{});
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
   Register("CS2_097","NONE",c=>{});
+  foreach(string id in new[]{"EX1_154","EX1_155","EX1_160","EX1_164","EX1_165","EX1_166","EX1_178","EX1_573","NEW1_007","NEW1_008"})Register(id,"NONE",ApplyChoice);
  }
+ public bool IsChoice(CardRecord card){return card!=null&&Choices(card).Length==2;}
+ public bool ValidChoice(CardRecord card,string key){return Choices(card).Any(option=>option.Key==key);}
+ public MatchChoiceOption[] Choices(CardRecord card){if(card==null)return new MatchChoiceOption[0];switch(card.BaseId){
+  case "EX1_154":return new[]{new MatchChoiceOption("three","造成 3 点伤害","对一个随从造成 3 点伤害。"),new MatchChoiceOption("one-draw","造成 1 点伤害并抽牌","对一个随从造成 1 点伤害，然后抽一张牌。")};
+  case "EX1_155":return new[]{new MatchChoiceOption("attack","攻击 +4","使一个随从获得 +4 攻击力。"),new MatchChoiceOption("health-taunt","生命 +4 和嘲讽","使一个随从获得 +4 生命值和嘲讽。")};
+  case "EX1_160":return new[]{new MatchChoiceOption("buff","全体 +1/+1","使你的所有随从获得 +1/+1。"),new MatchChoiceOption("panther","召唤猎豹","召唤一个 3/2 猎豹。")};
+  case "EX1_164":return new[]{new MatchChoiceOption("mana","获得 2 个法力水晶","获得 2 个法力水晶。"),new MatchChoiceOption("draw","抽 3 张牌","抽三张牌。")};
+  case "EX1_165":return new[]{new MatchChoiceOption("charge","冲锋","本随从获得冲锋。"),new MatchChoiceOption("taunt","生命 +2 和嘲讽","本随从获得 +2 生命值和嘲讽。")};
+  case "EX1_166":return new[]{new MatchChoiceOption("damage","造成 2 点伤害","对一个随从造成 2 点伤害。"),new MatchChoiceOption("silence","沉默","沉默一个随从。")};
+  case "EX1_178":return new[]{new MatchChoiceOption("attack","攻击 +5","本随从获得 +5 攻击力。"),new MatchChoiceOption("health-taunt","生命 +5 和嘲讽","本随从获得 +5 生命值和嘲讽。")};
+  case "EX1_573":return new[]{new MatchChoiceOption("buff","其他随从 +2/+2","使你的其他随从获得 +2/+2。"),new MatchChoiceOption("treants","召唤树人","召唤两个 2/2 并具有嘲讽的树人。")};
+  case "NEW1_007":return new[]{new MatchChoiceOption("five","造成 5 点伤害","对一个随从造成 5 点伤害。"),new MatchChoiceOption("area","敌方全体 2 点伤害","对所有敌方随从造成 2 点伤害。")};
+  case "NEW1_008":return new[]{new MatchChoiceOption("draw","抽 2 张牌","抽两张牌。"),new MatchChoiceOption("heal","恢复 5 点生命值","为你的英雄恢复 5 点生命值。")};
+  default:return new MatchChoiceOption[0];}}
+ public string Target(CardRecord card,string choice){if(!IsChoice(card))return Effect(card).Target;if(!ValidChoice(card,choice))return "NONE";switch(card.BaseId){case "EX1_154":case "EX1_155":case "EX1_166":return "MINION";case "NEW1_007":return choice=="area"?"NONE":"MINION";default:return "NONE";}}
+ void ApplyChoice(EffectContext c){switch(c.Card.BaseId){
+  case "EX1_154":Hit(c,c.Choice=="three"?3:1);if(c.Choice=="one-draw")c.Game.Draw(c.Seat,1);break;
+  case "EX1_155":if(c.Choice=="attack")c.Game.Buff(c.Target,4,0);else{c.Game.Buff(c.Target,0,4);c.Game.Unit(c.Target).Taunt=true;}break;
+  case "EX1_160":if(c.Choice=="buff"){foreach(var unit in c.Game.Players[c.Seat].Board.ToArray())c.Game.Buff(new MatchTarget(c.Seat,unit.Id),1,1);}else c.Game.Summon(c.Seat,"GAME_PANTHER");break;
+  case "EX1_164":if(c.Choice=="mana"){var player=c.Game.Players[c.Seat];int gained=Math.Min(2,10-player.MaxMana);player.MaxMana+=gained;player.Mana=Math.Min(player.MaxMana,player.Mana+gained);}else c.Game.Draw(c.Seat,3);break;
+  case "EX1_165":c.Game.Transform(new MatchTarget(c.Seat,c.Summoned.Id),c.Choice=="charge"?"VAN_EX1_165t1":"VAN_EX1_165t2");break;
+  case "EX1_166":if(c.Choice=="damage")c.Game.Damage(c.Target,2);else c.Game.Silence(c.Target);break;
+  case "EX1_178":if(c.Choice=="attack")c.Summoned.BuffAttack+=5;else{c.Game.Buff(new MatchTarget(c.Seat,c.Summoned.Id),0,5);c.Summoned.Taunt=true;}break;
+  case "EX1_573":if(c.Choice=="buff"){foreach(var unit in c.Game.Players[c.Seat].Board.Where(m=>m.Id!=c.Summoned.Id).ToArray())c.Game.Buff(new MatchTarget(c.Seat,unit.Id),2,2);}else{int at=c.Game.Players[c.Seat].Board.IndexOf(c.Summoned)+1;c.Game.Summon(c.Seat,"GAME_TREANT_TAUNT",at);c.Game.Summon(c.Seat,"GAME_TREANT_TAUNT",at+1);}break;
+  case "NEW1_007":if(c.Choice=="five")Hit(c,5);else Area(c,1-c.Seat,2,false);break;
+  case "NEW1_008":if(c.Choice=="draw")c.Game.Draw(c.Seat,2);else c.Game.Heal(new MatchTarget(c.Seat),5);break;
+ }}
  void Register(string id,string target,Action<EffectContext> action,Func<MatchEngine,int,string> requirement=null){effects[id]=new CardEffect{Target=target,Apply=action,Requirement=requirement};}
  void Damage(string id,int amount,string target="ANY_CHARACTER"){Register(id,target,c=>Hit(c,amount));}
  static void Hit(EffectContext context,int amount){context.Game.Damage(context.Target,amount+context.Game.SpellPower(context.Seat));}
