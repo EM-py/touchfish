@@ -22,14 +22,18 @@ public sealed class CardEffect {public string Target="NONE";public Action<Effect
 public sealed partial class MatchEngine {
  public readonly CardCatalog Catalog;public readonly MatchRules Rules;public readonly MatchPlayer[] Players=new MatchPlayer[]{new MatchPlayer(),new MatchPlayer()};
  public readonly List<string> Log=new List<string>();public int Active,Turn=1,Winner=-2,CardsPlayed;public readonly int Seed;int nextId=1;readonly Random random;
+ public readonly bool TestMode;
  public bool Finished{get{return Winner!=-2;}}
  internal MatchEngine(CardCatalog catalog){Catalog=catalog;Rules=new MatchRules(catalog);Seed=0;random=new Random(0);}
- public MatchEngine(CardCatalog catalog,DeckDocument first,DeckDocument second,int seed){
-  Catalog=catalog;Rules=new MatchRules(catalog);Seed=seed;random=new Random(seed);DeckRules.Validate(catalog,first,true);DeckRules.Validate(catalog,second,true);
+ public MatchEngine(CardCatalog catalog,DeckDocument first,DeckDocument second,int seed,bool testMode=false){
+  TestMode=testMode;Catalog=catalog;Rules=new MatchRules(catalog);Seed=seed;random=new Random(seed);DeckRules.Validate(catalog,first,true);DeckRules.Validate(catalog,second,true);
   if(new[]{first.ClassId,second.ClassId}.Any(c=>!new[]{"MAGE","WARRIOR","WARLOCK","ROGUE","PRIEST","PALADIN","HUNTER","SHAMAN","DRUID"}.Contains(c)))throw new InvalidOperationException("当前对战支持经典九职业。");
   var documents=new[]{first,second};for(int seat=0;seat<2;seat++){var missing=documents[seat].Cards.Keys.Where(id=>!Rules.Supports(catalog.Card(id))).ToArray();if(missing.Length>0)throw new InvalidOperationException("卡组含未实现效果："+String.Join("、",missing.Take(4).Select(id=>catalog.Card(id).Name))+"。可选择基础练习卡组。");var p=Players[seat];p.ClassId=documents[seat].ClassId;foreach(var pair in documents[seat].Cards)for(int n=0;n<pair.Value;n++)p.Deck.Add(pair.Key);for(int n=p.Deck.Count-1;n>0;n--){int index=random.Next(n+1);string temp=p.Deck[n];p.Deck[n]=p.Deck[index];p.Deck[index]=temp;}}
-  Log.Add("对局开始 · 本地 test");Draw(0,3);Draw(1,4);Players[1].Hand.Add(new HandCard{Id=nextId++,CardId="GAME_COIN"});Players[0].MaxMana=Players[0].Mana=1;
+  Log.Add("对局开始 · 本地 test");Draw(0,3);Draw(1,4);Players[1].Hand.Add(new HandCard{Id=nextId++,CardId="GAME_COIN"});Players[0].MaxMana=Players[0].Mana=1;if(TestMode)foreach(var player in Players)player.MaxMana=player.Mana=10;
  }
+ public ActionResult TestTakeCard(int seat,string cardId){return Act(()=>{
+  if(!TestMode)throw new InvalidOperationException("仅本地 test 可指定取牌。");RequireTurn(seat);var p=Players[seat];int index=p.Deck.IndexOf(cardId);if(index<0)throw new InvalidOperationException("剩余牌库中没有这张牌。");if(p.Hand.Count>=10)throw new InvalidOperationException("手牌已满十张，请先使用手牌。");p.Deck.RemoveAt(index);p.Hand.Add(new HandCard{Id=nextId++,CardId=cardId});Log.Add("玩家 "+(seat+1)+" · test 取牌："+Card(cardId).Name);
+ });}
  public CardRecord Card(string id){if(id=="GAME_COIN")return new CardRecord{Id=id,BaseId=id,Name="幸运币",Type="SPELL",CardClass="NEUTRAL",Cost=0,Text="仅在本回合获得一个法力水晶。",Mechanics=new string[0]};if(id=="GAME_DAGGER")return new CardRecord{Id=id,BaseId=id,Name="英雄匕首",Type="WEAPON",Attack=1,Durability=2,Text="1点攻击，2点耐久。",Mechanics=new string[0]};return Catalog.Card(id);}
  public BattleUnit Unit(MatchTarget target){return target==null||target.Hero?null:Players[target.Seat].Board.FirstOrDefault(m=>m.Id==target.UnitId);}
  public int AttackValue(BattleUnit unit){int attack=unit.BaseAttack+unit.BuffAttack+unit.TempAttack;var board=Players[unit.Owner].Board;foreach(var aura in board.Where(m=>!m.Silenced&&m.Id!=unit.Id)){string id=Card(aura.CardId).BaseId;if(id=="CS2_122"||id=="NEW1_033")attack++;if(id=="DS1_175"&&unit.Race=="BEAST")attack++;if(id=="EX1_162"&&Math.Abs(board.IndexOf(aura)-board.IndexOf(unit))==1)attack++;}return Math.Max(0,attack);}

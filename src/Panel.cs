@@ -247,7 +247,7 @@ public partial class PanelWindow : Window {
   ShowPage("settings");Render(Path.Combine(folder,"14-settings-light.png"));Check(!lightOption.IsEnabled&&!darkOption.IsEnabled,"WPS appearance controls disabled");ShowPage("game");
   ApplyMode(false);Check(Width==548&&Height==474,"Normal restoration");CheckBoardFit();CheckNormalWeights(this);
   VerifyLibrary(folder);
-  VerifyMatch(folder);
+  VerifyMatch(folder);VerifyLocalTestTools(folder);
   VerifyLan(folder);VerifyUpdates(folder);VerifyVisualEffects(folder);ApplyTheme(true,true);ApplyMode(true);OpenReleaseNotes();Render(Path.Combine(folder,"47-release-notes-codex.png"));ApplyTheme(false,false);ApplyMode(false);OpenReleaseNotes();Render(Path.Combine(folder,"48-release-notes-wps.png"));ShowPage("lan");
   File.WriteAllText(Path.Combine(folder,"verification.txt"),"PASS: "+checks+" assertions. Classic collection and deckcodes; local test engine, LAN host authority and two WPF peers over real TCP; attacks, spells, powers, placement, privacy, revision rejection, disconnects; themes and layouts.\r\nActual WPF visual-tree renders at 96 DPI. Rule coverage is partial. Automated network checks use loopback sockets. User reported a working LAN session with a friend; original game client comparisons were not performed.\r\n");
  }
