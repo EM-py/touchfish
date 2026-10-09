@@ -26,7 +26,7 @@ public sealed partial class MatchEngine {
  public bool Finished{get{return Winner!=-2;}}
  internal MatchEngine(CardCatalog catalog){Catalog=catalog;Rules=new MatchRules(catalog);Seed=0;random=new Random(0);}
  public MatchEngine(CardCatalog catalog,DeckDocument first,DeckDocument second,int seed,bool testMode=false){
-  TestMode=testMode;Catalog=catalog;Rules=new MatchRules(catalog);Seed=seed;random=new Random(seed);DeckRules.Validate(catalog,first,true);DeckRules.Validate(catalog,second,true);
+  TestMode=testMode;Catalog=catalog;Rules=new MatchRules(catalog);Seed=seed;random=new Random(seed);DeckRules.Validate(catalog,first,!testMode);DeckRules.Validate(catalog,second,!testMode);
   if(new[]{first.ClassId,second.ClassId}.Any(c=>!new[]{"MAGE","WARRIOR","WARLOCK","ROGUE","PRIEST","PALADIN","HUNTER","SHAMAN","DRUID"}.Contains(c)))throw new InvalidOperationException("当前对战支持经典九职业。");
   var documents=new[]{first,second};for(int seat=0;seat<2;seat++){var missing=documents[seat].Cards.Keys.Where(id=>!Rules.Supports(catalog.Card(id))).ToArray();if(missing.Length>0)throw new InvalidOperationException("卡组含未实现效果："+String.Join("、",missing.Take(4).Select(id=>catalog.Card(id).Name))+"。可选择基础练习卡组。");var p=Players[seat];p.ClassId=documents[seat].ClassId;foreach(var pair in documents[seat].Cards)for(int n=0;n<pair.Value;n++)p.Deck.Add(pair.Key);for(int n=p.Deck.Count-1;n>0;n--){int index=random.Next(n+1);string temp=p.Deck[n];p.Deck[n]=p.Deck[index];p.Deck[index]=temp;}}
   Log.Add("对局开始 · 本地 test");Draw(0,3);Draw(1,4);Players[1].Hand.Add(new HandCard{Id=nextId++,CardId="GAME_COIN"});Players[0].MaxMana=Players[0].Mana=1;if(TestMode)foreach(var player in Players)player.MaxMana=player.Mana=10;
