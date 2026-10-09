@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.3.2",Date="2026-10-09";
+ public const string Version="v0.3.4",Date="2026-10-09";
  public static readonly string[] PatchNotes={"修复玛里苟斯法术伤害：原先错误地增加 1，现在正确增加 5；沉默或离场后移除加成。","对方英雄区域显示手牌数量，随抽牌与出牌同步变化；不显示对方手牌内容。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
@@ -17,7 +17,7 @@ public static class AppRelease {
   "外观：WPS 与 Codex 风格，普通 / 极简模式；极简只显示攻、效果、血与详情入口。Codex 深色背景 #0D1117，文字 #E6EDF3。",
   "本地测试：仅从顶栏小 test 按钮进入自对战，正常对战入口为局域网。",
   "联机试运行：用户与朋友已实测，反馈可以运行。",
-  "当前范围：180 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
+  "当前范围：183 / 382 张牌可对战，其余标注【暂不可用】。完整经典规则、起手换牌、回合倒计时与断线续局尚未完成。"
  };
 }
 public partial class PanelWindow {
@@ -25,7 +25,9 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.3.2",AppRelease.Date,new[]{
+  body.Children.Add(ReleaseSection("v0.3.4",AppRelease.Date,new[]{"卡组绑定职业，选择已保存卡组或当前编辑卡组后自动切换并锁定职业；基础练习卡组按所选职业生成。","出牌与 test 取牌增加职业限制，只能使用本职业和中立牌；卡组导入、导出和开局继续校验职业。","组牌关键词搜索整个卡池，其他职业牌可查看但不能加入；支持多关键词，无结果时提示检查费用与类型筛选。"}));
+  body.Children.Add(ReleaseSection("v0.3.3","2026-10-09",new[]{"增加统一手牌弃牌结算，支持灵魂之火、魔犬、末日守卫和死亡之翼；随机弃牌不重复选择，手牌不足时弃掉现有牌。","房主结算随机结果，双方共享被弃掉的牌名，剩余手牌保密；死亡之翼的亡语抽牌在弃牌完成后结算。","可对战卡牌增加至 183 / 382；追踪术仍待牌库选择机制实现。"}));
+  body.Children.Add(ReleaseSection("v0.3.2","2026-10-09",new[]{
    "新增经典六张激怒牌，受伤时获得攻击、风怒或武器加攻；完全治疗、沉默或离场后移除对应加成。对战支持数量为 180 / 382。",
    "设置增加“特效全开”：普通模式可启用金色传说随从名字、生效中的红色激怒标记和震动，默认关闭。",
    "普通模式始终显示法术提示与伤害飘字，伤害飘字延长至 1 秒；极简模式不显示任何特效。",
