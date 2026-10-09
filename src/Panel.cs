@@ -27,6 +27,7 @@ public partial class PanelWindow : Window {
  static readonly Brush Ink=B("#34383D"), Muted=B("#83888F"), Line=B("#E7E9EC"), Green=B("#387C60");
  Grid shell, main; StackPanel detail; TextBlock detailTitle, detailText, detailMeta, status;
  Border detailBorder; Button compactButton, detailButton, pinButton, gameTab, logTab;
+ bool fullEffects;CheckBox fullEffectsOption;
  Grid logPanel; bool fullBoard=true, details=false, log=false; Entry selected;
  List<Border> rows=new List<Border>(); int checks;
  List<FrameworkElement> heroSlots=new List<FrameworkElement>(); List<Polygon> crystals=new List<Polygon>(); List<ScrollViewer> lanes=new List<ScrollViewer>();
@@ -193,10 +194,11 @@ public partial class PanelWindow : Window {
   stack.Children.Add(T("Codex 明暗",11,Muted));var tones=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,5,0,12)};
   lightOption=Option("浅色",120);darkOption=Option("深色",120);tones.Children.Add(lightOption);tones.Children.Add(darkOption);stack.Children.Add(tones);
   lightOption.Click+=(s,e)=>{ApplyTheme(codex,false);SavePreferences();};darkOption.Click+=(s,e)=>{ApplyTheme(codex,true);SavePreferences();};
+  fullEffectsOption=new CheckBox{Content="特效全开",FontSize=11,FontWeight=FontWeights.Normal,Foreground=Ink,Margin=new Thickness(0,0,0,5),IsChecked=fullEffects};fullEffectsOption.Click+=(s,e)=>{SetFullEffects(fullEffectsOption.IsChecked==true);SavePreferences();};stack.Children.Add(fullEffectsOption);
   var note=T("即时生效，自动记住选择。所有文字保持正常字重。",10,Muted);note.TextWrapping=TextWrapping.Wrap;stack.Children.Add(note);UpdateSettingButtons();
  }
  Button Option(string text,double width){var button=Btn(text,width);button.Height=29;button.Margin=new Thickness(0,0,6,0);return button;}
- void UpdateSettingButtons(){if(wpsOption==null)return;Mark(wpsOption,!codex);Mark(codexOption,codex);Mark(normalOption,!minimal);Mark(minimalOption,minimal);Mark(lightOption,!dark);Mark(darkOption,dark);lightOption.IsEnabled=codex;darkOption.IsEnabled=codex;lightOption.Opacity=darkOption.Opacity=codex?1:.45;}
+ void UpdateSettingButtons(){if(fullEffectsOption!=null)fullEffectsOption.IsChecked=fullEffects;if(wpsOption==null)return;Mark(wpsOption,!codex);Mark(codexOption,codex);Mark(normalOption,!minimal);Mark(minimalOption,minimal);Mark(lightOption,!dark);Mark(darkOption,dark);lightOption.IsEnabled=codex;darkOption.IsEnabled=codex;lightOption.Opacity=darkOption.Opacity=codex?1:.45;}
  void Mark(Button button,bool active){button.Background=active?B("#EDF4F0"):B("#F7F8FA");button.Foreground=active?Ink:Muted;}
  void ApplyTheme(bool useCodex,bool useDark){
   codex=useCodex;dark=useDark;
@@ -221,9 +223,10 @@ public partial class PanelWindow : Window {
  void ApplyFonts(DependencyObject root){Walk(root,node=>{var text=node as TextBlock;if(text!=null&&text.Tag is double){text.FontSize=Math.Max(9,(double)text.Tag-(minimal?.5:0));text.FontWeight=FontWeights.Normal;}});}
  static void Walk(DependencyObject root,Action<DependencyObject> action){action(root);foreach(var child in LogicalTreeHelper.GetChildren(root)){var node=child as DependencyObject;if(node!=null)Walk(node,action);}}
  void RefreshSelection(){foreach(var row in rows)row.Background=row.Tag==selected?B("#EDF4F0"):heroSlots.Contains(row)?B("#F7F8FA"):B("#FFFFFF");}
+ void SetFullEffects(bool enabled){fullEffects=enabled;UpdateSettingButtons();SyncMatchEffectsVisibility();if(match!=null)RenderMatch();}
  string PreferencesPath{get{return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"preferences.ini");}}
- void SavePreferences(){if(previewRun)return;try{File.WriteAllText(PreferencesPath,"theme="+(codex?"codex":"wps")+"\r\nappearance="+(dark?"dark":"light")+"\r\nmode="+(minimal?"minimal":"normal")+"\r\n");status.Text="外观设置已保存";}catch(IOException){status.Text="设置已生效，保存失败";}catch(UnauthorizedAccessException){status.Text="设置已生效，目录不可写";}}
- void LoadPreferences(){try{if(!File.Exists(PreferencesPath))return;string value=File.ReadAllText(PreferencesPath);ApplyTheme(value.Contains("theme=codex"),value.Contains("appearance=dark"));ApplyMode(value.Contains("mode=minimal"));}catch(IOException){}catch(UnauthorizedAccessException){}}
+ void SavePreferences(){if(previewRun)return;try{File.WriteAllText(PreferencesPath,"theme="+(codex?"codex":"wps")+"\r\nappearance="+(dark?"dark":"light")+"\r\nmode="+(minimal?"minimal":"normal")+"\r\neffects="+(fullEffects?"all":"off")+"\r\n");status.Text="外观设置已保存";}catch(IOException){status.Text="设置已生效，保存失败";}catch(UnauthorizedAccessException){status.Text="设置已生效，目录不可写";}}
+ void LoadPreferences(){try{if(!File.Exists(PreferencesPath))return;string value=File.ReadAllText(PreferencesPath);fullEffects=value.Contains("effects=all");ApplyTheme(value.Contains("theme=codex"),value.Contains("appearance=dark"));ApplyMode(value.Contains("mode=minimal"));}catch(IOException){}catch(UnauthorizedAccessException){}}
  public void ShowCodexMinimal(){ApplyTheme(true,true);ApplyMode(true);}
  
  public void Render(string path){
@@ -248,7 +251,7 @@ public partial class PanelWindow : Window {
   ApplyMode(false);Check(Width==548&&Height==474,"Normal restoration");CheckBoardFit();CheckNormalWeights(this);
   VerifyLibrary(folder);
   VerifyMatch(folder);VerifyLocalTestTools(folder);
-  VerifyLan(folder);VerifyUpdates(folder);VerifyVisualEffects(folder);ApplyTheme(true,true);ApplyMode(true);OpenReleaseNotes();Render(Path.Combine(folder,"47-release-notes-codex.png"));ApplyTheme(false,false);ApplyMode(false);OpenReleaseNotes();Render(Path.Combine(folder,"48-release-notes-wps.png"));ShowPage("lan");
+  VerifyLan(folder);VerifyUpdates(folder);VerifyVisualEffects(folder);ApplyTheme(true,true);ApplyMode(true);OpenReleaseNotes();Render(Path.Combine(folder,"47-release-notes-codex.png"));ApplyTheme(false,false);ApplyMode(false);OpenReleaseNotes();Render(Path.Combine(folder,"48-release-notes-wps.png"));RenderExpandedRelease(folder);ShowPage("lan");
   File.WriteAllText(Path.Combine(folder,"verification.txt"),"PASS: "+checks+" assertions. Classic collection and deckcodes; local test engine, LAN host authority and two WPF peers over real TCP; attacks, spells, powers, placement, privacy, revision rejection, disconnects; themes and layouts.\r\nActual WPF visual-tree renders at 96 DPI. Rule coverage is partial. Automated network checks use loopback sockets. User reported a working LAN session with a friend; original game client comparisons were not performed.\r\n");
  }
  void CheckBoardFit(){UpdateLayout();Check(battleCards.Count==14,"Fourteen visible minions");foreach(var card in battleCards){var bounds=card.TransformToAncestor(main).TransformBounds(new Rect(0,0,card.ActualWidth,card.ActualHeight));Check(bounds.Left>=-1&&bounds.Right<=main.ActualWidth+1&&bounds.Bottom<=main.ActualHeight+1,"Card in viewport");var label=(StackPanel)((Grid)card.Child).Children[1];Check(label.DesiredSize.Height<=card.ActualHeight-4,"Wrapping fits card");}foreach(var slot in heroSlots){var bounds=slot.TransformToAncestor(main).TransformBounds(new Rect(0,0,slot.ActualWidth,slot.ActualHeight));Check(bounds.Bottom<=main.ActualHeight+1,"Hero component in viewport");}Check(crystals.Count==20,"Twenty crystals");CheckNormalWeights(this);}
