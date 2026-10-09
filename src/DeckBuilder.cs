@@ -87,7 +87,7 @@ public partial class PanelWindow {
  void RemoveCard(CardRecord card){if(!draft.Cards.ContainsKey(card.Id))return;RememberDeck();if(--draft.Cards[card.Id]==0)draft.Cards.Remove(card.Id);RefreshDeck();PersistDraft();Notice("已移除一张 "+card.Name);}
  static string ClassLabel(string value){var item=Classes.FirstOrDefault(c=>c.Key==value);return item==null?"中立":item.Label;}
  static string RarityLabel(string value){return value=="LEGENDARY"?"传说":value=="EPIC"?"史诗":value=="RARE"?"稀有":"普通";}
- static Brush RarityColor(string value){return value=="LEGENDARY"?B("#B45B13"):value=="EPIC"?B("#8756A4"):value=="RARE"?B("#3478B8"):Muted;}
+ Brush RarityColor(string value){if(!fullEffects)return Muted;return value=="LEGENDARY"?B("#B45B13"):value=="EPIC"?B("#8756A4"):value=="RARE"?B("#3478B8"):Muted;}
  void SaveFinishedDeck(){try{string code=DeckCode.Encode(catalog,draft);var saved=savedDecks.FirstOrDefault(d=>d.Id==draft.Id);if(saved==null){saved=new SavedDeck{Id=draft.Id};savedDecks.Add(saved);}saved.Name=String.IsNullOrWhiteSpace(draft.Name)?"未命名卡组":draft.Name;saved.Code=code;saved.PoolId=draft.PoolId;if(!previewRun)JsonData.Write(Path.Combine(DeckDirectory,"library.json"),savedDecks);Notice("卡组已按代码保存。");}catch(Exception ex){if(!(ex is InvalidDataException||ex is IOException||ex is UnauthorizedAccessException))throw;Notice(ex.Message);}}
  void ExportCode(){try{string code=DeckCode.Encode(catalog,draft);if(!previewRun)Clipboard.SetText(code);ShowCodeUi(false,code);codeNotice.Text="代码已复制，可直接分享。";}catch(Exception ex){if(!(ex is InvalidDataException||ex is System.Runtime.InteropServices.ExternalException))throw;Notice(ex.Message);}}
  void ShowCodeUi(bool importing,string value){
