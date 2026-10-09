@@ -261,7 +261,7 @@ public partial class PanelWindow : Window {
 public static class Program {
  [STAThread]public static void Main(string[] args){try{
   string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow();if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
-  if(args.Length==2&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
+  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&args[3]=="summon")&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4)window.PreviewSummonScope(args[1]);else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
   app.Run(window);
  }catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"startup-error.txt"),ex.ToString());Environment.ExitCode=1;}
  }

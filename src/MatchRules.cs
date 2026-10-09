@@ -37,6 +37,7 @@ public sealed class MatchRules {
   Register("CS1_112","NONE",c=>{Area(c,1-c.Seat,2,true);foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_621","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.Heal(target,4);});Register("EX1_624","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Heal(new MatchTarget(c.Seat),5);});Register("EX1_626","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Silence(target);c.Game.Draw(c.Seat,1);});
   Register("CS2_105","NONE",c=>c.Game.Players[c.Seat].TempAttack+=4);Register("EX1_606","NONE",c=>{c.Game.Players[c.Seat].Armor+=5;c.Game.Draw(c.Seat,1);});Register("EX1_400","NONE",c=>{Area(c,0,1,false);Area(c,1,1,false);});Register("CS2_108","ENEMY_DAMAGED_MINION",Kill,(g,s)=>null);
   Register("EX1_391","MINION",c=>{Hit(c,2);if(c.Game.Unit(c.Target).Health>0)c.Game.Draw(c.Seat,1);});Register("EX1_408","ANY_CHARACTER",c=>Hit(c,c.Game.Players[c.Seat].Health<=12?6:4));Register("EX1_410","MINION",c=>Hit(c,c.Game.Players[c.Seat].Armor));Register("EX1_607","MINION",c=>{Hit(c,1);c.Game.Buff(c.Target,2,0);});Register("CS2_103","FRIENDLY_MINION",c=>{c.Game.Buff(c.Target,2,0);c.Game.Unit(c.Target).Charge=true;});
+  Register("EX1_562","NONE",c=>c.Game.SummonAround(c.Seat,c.Summoned,"GAME_WHELP"));
   // Battlecries are explicit and do not inherit spell damage bonuses.
   Register("EX1_506","NONE",c=>c.Game.Summon(c.Seat,"VAN_EX1_506a",c.Game.Players[c.Seat].Board.IndexOf(c.Summoned)+1));
   Register("CS2_196","NONE",c=>c.Game.Summon(c.Seat,"VAN_CS2_boar",c.Game.Players[c.Seat].Board.IndexOf(c.Summoned)+1));
@@ -47,6 +48,7 @@ public sealed class MatchRules {
   Register("EX1_046","MINION",c=>c.Game.Unit(c.Target).TempAttack+=2);Register("CS2_188","MINION",c=>c.Game.Unit(c.Target).TempAttack+=2);Register("EX1_603","MINION",c=>{c.Game.Damage(c.Target,1);c.Game.Buff(c.Target,2,0);});Register("EX1_319","NONE",c=>c.Game.Damage(new MatchTarget(c.Seat),3));
   Register("DS1_055","NONE",c=>{foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_583","NONE",c=>c.Game.Heal(new MatchTarget(c.Seat),4));Register("EX1_593","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),3));
   foreach(string id in new[]{"EX1_170","EX1_556","EX1_096","EX1_029","EX1_012","CS2_033","EX1_162","CS2_122","DS1_175"})Register(id,"NONE",c=>{});
+  foreach(string id in GiantRules.Ids)Register(id,"NONE",c=>{});
   foreach(string id in AuraRules.Ids)Register(id,"NONE",c=>{});
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
