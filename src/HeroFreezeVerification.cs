@@ -1,0 +1,25 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+namespace Touchfish {
+public partial class PanelWindow {
+ public void PreviewHeroFreezeScope(string folder){
+  previewRun=true;Directory.CreateDirectory(folder);int before=checks;
+  var game=MatchFixture("MAGE","WARRIOR");var water=game.Summon(0,"VAN_CS2_033");water.SummonTurn=0;game.EquipRaw(1,"GAME_DAGGER",1,2,false);game.Players[1].Armor=10;
+  Check(game.Attack(0,water.Id,new MatchTarget(1)).Success&&game.Players[1].Frozen,"Water Elemental freezes hero even when armor absorbs all damage");game.EndTurn();
+  int health=game.Players[0].Health,durability=game.Players[1].WeaponDurability;var attack=game.Attack(1,0,new MatchTarget(0));Check(!attack.Success&&attack.Message.Contains("冻结")&&game.Players[0].Health==health&&game.Players[1].WeaponDurability==durability&&game.Players[1].HeroAttacks==0,"Frozen hero cannot attack or spend durability on next turn");
+  Check(game.HeroPower(1).Success&&game.Players[1].Frozen,"Frozen warrior may use hero power without thawing");game.EndTurn();Check(!game.Players[1].Frozen,"Hero thaws after frozen attack turn is skipped");game.EndTurn();Check(game.Attack(1,0,new MatchTarget(0)).Success,"Hero may attack on following own turn");
+  game=MatchFixture("DRUID","MAGE");game.Players[0].TempAttack=1;game.EquipRaw(0,"GAME_DAGGER",1,2,true);water=game.Summon(1,"VAN_CS2_033");Check(game.Attack(0,0,new MatchTarget(1,water.Id)).Success&&game.Players[0].Frozen,"Hero attacking Water Elemental is frozen by retaliation");Check(!game.Attack(0,0,new MatchTarget(1)).Success,"Frozen windfury hero cannot make second attack");game.EndTurn();Check(game.Players[0].Frozen,"Freeze after own attack lasts through next attack turn");game.EndTurn();Check(game.Players[0].Frozen&&!game.Attack(0,0,new MatchTarget(1)).Success,"Hero remains frozen on next own turn after attacking Water Elemental");
+  match=game;matchViewSeat=0;lanMode=false;awaitHandoff=false;ClearPending();ApplyTheme(true,true);ApplyMode(false);SetFullEffects(true);ShowPage("match");RenderMatch();UseWeaponSlot(0,true);Check(pending!="heroattack"&&status.Text.Contains("冻结"),"Weapon slot input blocks frozen hero attack");Render(Path.Combine(folder,"108-frozen-hero-codex.png"));
+  Check(HeroWeaponLabel(0).Contains("冻结"),"Normal weapon slot shows freeze state");ApplyMode(true);Check(!HeroWeaponLabel(0).Contains("冻"),"Minimal hides special frozen hero marker");Render(Path.Combine(folder,"109-frozen-hero-minimal.png"));ApplyMode(false);SetFullEffects(false);Check(!HeroWeaponLabel(0).Contains("冻")&&!match.Attack(0,0,new MatchTarget(1)).Success,"Extras off hides marker while retaining frozen attack block");SetFullEffects(true);VerifyHeroFreezeTcp(folder);
+  File.WriteAllText(Path.Combine(folder,"hero-freeze-verification.txt"),"PASS: "+(checks-before)+" hero freeze assertions and WPF preview.");
+ }
+ void VerifyHeroFreezeTcp(string folder){
+  LeaveLan();ApplyMode(false);SetFullEffects(true);var guest=new PanelWindow(true){ShowInTaskbar=false,Opacity=0};guest.Show();guest.ApplyMode(false);guest.SetFullEffects(true);
+  try{lanPort.Text=FreeLanPort().ToString();lanDeck.SelectedIndex=0;lanClass.SelectedItem=Classes.First(c=>c.Key=="MAGE");BeginLan(true);guest.lanDeck.SelectedIndex=0;guest.lanClass.SelectedItem=Classes.First(c=>c.Key=="WARRIOR");guest.lanAddress.Text="127.0.0.1:"+lanPort.Text;guest.BeginLan(false);PumpLan(()=>lanReady&&guest.lanReady,"Frozen hero TCP peers connect");DoMatch("mulligan",selectedIds:new int[0]);PumpLan(()=>guest.match.Players[0].MulliganDone,"Host confirms mulligan");guest.DoMatch("mulligan",selectedIds:new int[0]);PumpLan(()=>match.MulliganComplete&&!guest.lanWaiting,"Guest confirms mulligan");
+   var game=lanAuthority.Game;foreach(var p in game.Players){p.Hand.Clear();p.Board.Clear();p.Mana=p.MaxMana=10;}var water=game.Summon(0,"VAN_CS2_033");water.SummonTurn=0;game.EquipRaw(1,"GAME_DAGGER",1,2,false);PublishLan();PumpLan(()=>guest.match.Players[0].Board.Count==1,"Water Elemental fixture reaches guest");ClickMatchTarget(new MatchTarget(0,water.Id));ClickMatchTarget(new MatchTarget(1));PumpLan(()=>guest.match.Players[1].Frozen,"Water Elemental freezes guest hero over TCP");DoMatch("end");PumpLan(()=>guest.match.Active==1,"Guest frozen turn starts");int health=game.Players[0].Health,durability=game.Players[1].WeaponDurability;guest.UseWeaponSlot(1,true);Check(guest.pending!="heroattack"&&guest.status.Text.Contains("冻结"),"Guest weapon click rejects attack while frozen");guest.DoMatch("attack",0,new MatchTarget(0));PumpLan(()=>!guest.lanWaiting,"Forced guest attack reply received");Check(game.Players[0].Health==health&&game.Players[1].WeaponDurability==durability&&game.Players[1].Frozen,"Authority rejects frozen attack without damage or durability loss");guest.Opacity=1;guest.Render(Path.Combine(folder,"110-frozen-hero-tcp.png"));guest.Opacity=0;guest.DoMatch("end");PumpLan(()=>match.Active==0&&!guest.lanWaiting,"Frozen guest skips attack turn");Check(!game.Players[1].Frozen&&!guest.match.Players[1].Frozen,"Hero thaw synchronizes after skipped turn");
+  }finally{guest.LeaveLan();guest.Close();LeaveLan();}
+ }
+
+}
+}

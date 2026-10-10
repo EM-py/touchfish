@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -33,7 +33,8 @@ public sealed class MatchRules {
   Register("CS2_061","ANY_CHARACTER",c=>{Hit(c,2);c.Game.Heal(new MatchTarget(c.Seat),2);});Register("CS2_062","NONE",c=>{Area(c,0,3,true);Area(c,1,3,true);});Register("EX1_308","ANY_CHARACTER",c=>{Hit(c,4);c.Game.DiscardRandom(c.Seat,1);});
   Register("EX1_306","NONE",c=>c.Game.DiscardRandom(c.Seat,1));Register("EX1_310","NONE",c=>c.Game.DiscardRandom(c.Seat,2));Register("NEW1_030","NONE",c=>c.Game.DeathwingBattlecry(c.Seat,c.Summoned));
   Register("EX1_302","MINION",c=>{Hit(c,1);if(c.Game.Unit(c.Target).Health<=0)c.Game.Draw(c.Seat,1);});Register("EX1_309","MINION",c=>{Kill(c);c.Game.Heal(new MatchTarget(c.Seat),3);});Register("EX1_312","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.Unit(target).DamageTaken=c.Game.Unit(target).MaxHealth;});
-  Register("CS2_073","MINION",c=>c.Game.Buff(c.Target,c.Combo?4:2,0));Register("EX1_124","ANY_CHARACTER",c=>Hit(c,c.Combo?4:2));Register("CS2_075","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),3+c.Game.SpellPower(c.Seat)));Register("CS2_076","ENEMY_MINION",Kill);Register("EX1_581","ENEMY_MINION",c=>c.Game.ReturnToHand(c.Target));
+  Register("CS2_073","MINION",ComboRules.Apply);Register("EX1_124","ANY_CHARACTER",ComboRules.Apply);Register("CS2_075","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),3+c.Game.SpellPower(c.Seat)));Register("CS2_076","ENEMY_MINION",Kill);Register("EX1_581","ENEMY_MINION",c=>c.Game.ReturnToHand(c.Target));
+  Register("EX1_131","NONE",ComboRules.Apply);Register("EX1_133","ANY_CHARACTER",ComboRules.Apply);Register("EX1_134","NONE",ComboRules.Apply);Register("EX1_137","NONE",ComboRules.Apply);Register("EX1_613","NONE",ComboRules.Apply);Register("NEW1_005","NONE",ComboRules.Apply);
   Register("CS2_074","NONE",c=>c.Game.Players[c.Seat].WeaponAttack+=2,(g,s)=>g.Players[s].WeaponDurability==0?"需要先装备武器。":null);Register("EX1_278","ANY_CHARACTER",c=>{Hit(c,1);c.Game.Draw(c.Seat,1);});Register("EX1_129","NONE",c=>{Area(c,1-c.Seat,1,false);c.Game.Draw(c.Seat,1);});
   Register("CS2_084","MINION",c=>c.Game.SetHealth(c.Target,1));Register("EX1_539","ANY_CHARACTER",c=>Hit(c,c.Game.Players[c.Seat].Board.Any(m=>m.Race=="BEAST")?5:3));Register("EX1_617","NONE",c=>{var target=c.Game.RandomTarget(c.Game.Characters(1-c.Seat,false));if(target!=null)c.Game.Unit(target).DamageTaken=c.Game.Unit(target).MaxHealth;},(g,s)=>g.Players[1-s].Board.Count==0?"对方没有随从。":null);
   Register("NEW1_031","NONE",c=>{var token=c.Game.RandomTarget(new[]{new MatchTarget(0),new MatchTarget(1),new MatchTarget(2)});c.Game.Summon(c.Seat,new[]{"VAN_NEW1_032","VAN_NEW1_033","VAN_NEW1_034"}[token.Seat]);},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
@@ -74,6 +75,7 @@ public sealed class MatchRules {
   foreach(string id in ConditionalTriggerRules.CardIds)Register(id,"NONE",c=>{});
   Register("NEW1_029","NONE",c=>TimedCostRules.GrantFreeSpells(c.Game,1-c.Seat,c.Game.Turn+1));
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
+  Register("CS2_063","ENEMY_MINION",WarlockRules.Apply);Register("CS2_064","NONE",WarlockRules.Apply);Register("EX1_301","NONE",WarlockRules.Apply);Register("EX1_303","FRIENDLY_MINION",WarlockRules.Apply);Register("EX1_304","NONE",WarlockRules.Apply);Register("EX1_313","NONE",WarlockRules.Apply);Register("EX1_317","NONE",WarlockRules.Apply);Register("EX1_320","ANY_CHARACTER",WarlockRules.Apply);Register("EX1_596","MINION",WarlockRules.Apply);Register("NEW1_003","DEMON_MINION",WarlockRules.Apply);
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
   Register("CS2_097","NONE",c=>{});
   foreach(string id in new[]{"EX1_154","EX1_155","EX1_160","EX1_164","EX1_165","EX1_166","EX1_178","EX1_573","NEW1_007","NEW1_008"})Register(id,"NONE",ApplyChoice);
@@ -92,7 +94,8 @@ public sealed class MatchRules {
   case "NEW1_007":return new[]{new MatchChoiceOption("five","造成 5 点伤害","对一个随从造成 5 点伤害。"),new MatchChoiceOption("area","敌方全体 2 点伤害","对所有敌方随从造成 2 点伤害。")};
   case "NEW1_008":return new[]{new MatchChoiceOption("draw","抽 2 张牌","抽两张牌。"),new MatchChoiceOption("heal","恢复 5 点生命值","为你的英雄恢复 5 点生命值。")};
   default:return new MatchChoiceOption[0];}}
- public string Target(CardRecord card,string choice){if(!IsChoice(card))return Effect(card).Target;if(!ValidChoice(card,choice))return "NONE";switch(card.BaseId){case "EX1_154":case "EX1_155":case "EX1_166":return "MINION";case "NEW1_007":return choice=="area"?"NONE":"MINION";default:return "NONE";}}
+ public string Target(CardRecord card,string choice){return Target(card,choice,false);}
+ public string Target(CardRecord card,string choice,bool combo){string comboTarget=ComboRules.Target(card,combo);if(comboTarget!=null)return comboTarget;if(!IsChoice(card))return Effect(card).Target;if(!ValidChoice(card,choice))return "NONE";switch(card.BaseId){case "EX1_154":case "EX1_155":case "EX1_166":return "MINION";case "NEW1_007":return choice=="area"?"NONE":"MINION";default:return "NONE";}}
  void ApplyChoice(EffectContext c){switch(c.Card.BaseId){
   case "EX1_154":Hit(c,c.Choice=="three"?3:1);if(c.Choice=="one-draw")c.Game.Draw(c.Seat,1);break;
   case "EX1_155":if(c.Choice=="attack")c.Game.Buff(c.Target,4,0);else{c.Game.Buff(c.Target,0,4);c.Game.Unit(c.Target).Taunt=true;}break;
