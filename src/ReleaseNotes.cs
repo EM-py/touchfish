@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.4.2",Date="2026-10-10";
- public static readonly string[] PatchNotes={"新增八张经典卡，条件触发、回合开始与亡语机制统一，支持 243 / 382。","整合右键英雄对话与种族标注，手牌法术允许跨职业使用；极简保持安静。"};
+ public const string Version="v0.4.3",Date="2026-10-10";
+ public static readonly string[] PatchNotes={"卡组长期保存，切换职业保护原卡组，删除前二次确认。","补齐德鲁伊法术和过载，支持 247 / 382；增加法术展示并修复对话取消选择。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -25,7 +25,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.4.2",AppRelease.Date,new[]{"新增米尔豪斯·法力风暴、纳特·帕格、游学者周卓、任务达人、末日预言者、憎恶、长鬃草原狮和比斯巨兽，支持数量增至 243 / 382。","条件触发、回合开始与限时费用分别使用公共机制；手中法术允许跨职业使用，组牌限制与未实现效果拦截保留。","合并右键英雄对话、自动开场与落败台词和种族标注；保留无边框、极简禁用对话及随从台词特效开关。"}));
+  body.Children.Add(ReleaseSection("v0.4.3",AppRelease.Date,new[]{"补齐经典德鲁伊全部法术、九张过载牌，支持 247 / 382；显示待锁与已锁水晶。","特效全开时向对手展示完整法术信息，停留两秒后淡出，多张按序排列，极简禁用。","修复对方对话取消攻击、法术、技能及抉择位置选择。","卡组代码保存在 Windows 用户数据目录，不再依赖程序安装位置；更新或更换程序目录后仍可读取。","首次启动自动读取并合并旧版本程序目录里的卡组代码；卡组草稿与卡组库分开保存。","从已保存卡组切换职业会新建独立卡组；组卡页支持二次确认后删除指定已保存卡组。"}));
+  body.Children.Add(ReleaseSection("v0.4.2","2026-10-10",new[]{"新增米尔豪斯·法力风暴、纳特·帕格、游学者周卓、任务达人、末日预言者、憎恶、长鬃草原狮和比斯巨兽，支持数量增至 243 / 382。","条件触发、回合开始与限时费用分别使用公共机制；手中法术允许跨职业使用，组牌限制与未实现效果拦截保留。","合并右键英雄对话、自动开场与落败台词和种族标注；保留无边框、极简禁用对话及随从台词特效开关。"}));
   body.Children.Add(ReleaseSection("v0.4.1","2026-10-09",new[]{"武器槽显示英雄总攻击力，德鲁伊可从此发起攻击。","组牌品质颜色随特效设置切换；普通模式英雄对话显示气泡。","死亡之翼开启特效时震屏两秒并飘过红色火字；任意一方启用时双方同步暂停操作，关闭特效者显示正在播放动画。"}));
   body.Children.Add(ReleaseSection("v0.4.0","2026-10-09",new[]{"合并双方功能分支，经典支持数量增至 235 / 382。","增加起手换牌，双方确认后开始对局，后手获得幸运币；英雄对话通过房主校验并共享。","补齐回合结束触发、临时控制返还、到期销毁及伊瑟拉和五张梦境牌；霍格统一为单一触发。","新增六张圣骑士卡及哈里森、凯恩、希尔瓦娜斯和火车王；组牌页显示品质。","保留光环、三巨人、左右召唤和底部抉择；修复换牌抽回原牌、神圣愤怒英雄目标与永久控制后回手归属。"}));
   body.Children.Add(ReleaseSection("v0.3.6",AppRelease.Date,new[]{"补齐经典十四张光环牌的持续属性、冲锋、减费与加费效果；来源沉默或离场后动态移除，手牌展示实际费用。","支持鱼人双方光环、相邻位置更新和生命光环移除后的生命上限调整。实现经典山岭巨人、海巨人、熔核巨人的动态费用，减费条件变化时同步更新手牌和实际扣费。奥妮克希亚左右交替召唤雏龙补满七随从；空场左右各三只。新增十张经典抉择牌，先选效果再验证目标；右键取消保留手牌，不改变牌库。可对战牌为 211 / 382。"}));
