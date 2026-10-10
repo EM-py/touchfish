@@ -65,6 +65,9 @@ public sealed class MatchRules {
   Register("EX1_558","NONE",c=>{var opponent=c.Game.Players[1-c.Seat];int durability=opponent.WeaponDurability;if(opponent.WeaponId!=null&&durability>0){c.Game.BreakWeapon(1-c.Seat);c.Game.Draw(c.Seat,durability);}});
   Register("EX1_116","NONE",c=>{c.Game.Summon(1-c.Seat,"GAME_WHELP");c.Game.Summon(1-c.Seat,"GAME_WHELP");});
   foreach(string id in new[]{"EX1_383","EX1_110","EX1_016"})Register(id,"NONE",c=>{});
+  foreach(string id in DeathrattleRules.CardIds)Register(id,"NONE",c=>{});
+  foreach(string id in ConditionalTriggerRules.CardIds)Register(id,"NONE",c=>{});
+  Register("NEW1_029","NONE",c=>TimedCostRules.GrantFreeSpells(c.Game,1-c.Seat,c.Game.Turn+1));
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
   Register("CS2_097","NONE",c=>{});
@@ -106,7 +109,7 @@ public sealed class MatchRules {
  static void Adjacent(EffectContext context,int attack,int health,bool taunt){var board=context.Game.Players[context.Seat].Board;int index=board.IndexOf(context.Summoned);foreach(int place in new[]{index-1,index+1})if(place>=0&&place<board.Count){context.Game.Buff(new MatchTarget(context.Seat,board[place].Id),attack,health);if(taunt)board[place].Taunt=true;}}
  public bool Supports(CardRecord card){if(card.Id=="GAME_COIN")return true;if(effects.ContainsKey(card.BaseId))return true;if(card.Type!="MINION"&&card.Type!="WEAPON")return false;if(card.Mechanics!=null&&card.Mechanics.Any(m=>!SimpleMechanics.Contains(m)))return false;string text=Regex.Replace(card.Text??"",@"法术伤害\+\d+|过载[：:]?\s*[（(]\d+[）)]|嘲讽|冲锋|圣盾|风怒|剧毒|潜行|无法攻击|不能攻击|扰魔|无法成为法术或英雄技能的目标","");return Regex.Replace(text,@"[\s，。；,:;.（）()]+","").Length==0;}
  public CardEffect Effect(CardRecord card){CardEffect effect;if(effects.TryGetValue(card.BaseId,out effect))return effect;return new CardEffect{Apply=c=>{}};}
- public void Death(MatchEngine game,BattleUnit unit){string id=game.Card(unit.CardId).BaseId;if(id=="EX1_556"){int position=game.Players[unit.Owner].Board.FindIndex(m=>m.Id==unit.DeathAnchor);game.Summon(unit.Owner,"VAN_skele21",position);}if(id=="EX1_096"||id=="EX1_012")game.Draw(unit.Owner,1);if(id=="EX1_029")game.Damage(new MatchTarget(1-unit.Owner),2);if(id=="EX1_383")game.EquipRaw(unit.Owner,"GAME_ASHBRINGER",5,3,false);if(id=="EX1_110")game.Summon(unit.Owner,"VAN_EX1_110t",game.Players[unit.Owner].Board.FindIndex(m=>m.Id==unit.DeathAnchor));if(id=="EX1_016")game.StealRandomEnemyMinion(unit.Owner);}
+ public void Death(MatchEngine game,BattleUnit unit){DeathrattleRules.Resolve(game,unit);}
  public DeckDocument TrainingDeck(string classId){var pool=catalog.Pool("classic-2014");var deck=new DeckDocument{ClassId=classId,PoolId=pool.Id,Name="基础练习 · "+classId};var all=catalog.Deckable(pool);var selected=all.Where(c=>c.CardClass==classId&&c.Rarity!="LEGENDARY"&&Supports(c)).Take(8).Concat(all.Where(c=>c.CardClass=="NEUTRAL"&&c.Rarity!="LEGENDARY"&&c.Cost>=1&&c.Cost<=5&&Supports(c))).Take(15);foreach(var card in selected)deck.Cards[card.Id]=2;DeckRules.Validate(catalog,deck,true);return deck;}
 }
 }

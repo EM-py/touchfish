@@ -39,10 +39,10 @@ public partial class PanelWindow : Window {
  public PanelWindow() {
   Title="协作面板 · "+AppRelease.Version; Width=548; Height=474; MinWidth=548; MinHeight=474; FontWeight=FontWeights.Normal;
   WindowStartupLocation=WindowStartupLocation.CenterScreen; WindowStyle=WindowStyle.None;
-  ResizeMode=ResizeMode.CanResizeWithGrip; Background=B("#FFFFFF"); FontFamily=new FontFamily("Microsoft YaHei UI");
+  ResizeMode=ResizeMode.NoResize; Background=B("#FFFFFF"); FontFamily=new FontFamily("Microsoft YaHei UI");
   FontSize=12; Foreground=Ink; UseLayoutRounding=true; SnapsToDevicePixels=true;
   TextOptions.SetTextFormattingMode(this,TextFormattingMode.Display);
-  var outer=new Border {BorderBrush=B("#CFD3D8"),BorderThickness=new Thickness(1),Background=B("#FFFFFF")}; Content=outer;
+  var outer=new Border {BorderThickness=new Thickness(0),Background=B("#FFFFFF")}; Content=outer;
   shell=new Grid(); outer.Child=shell;
   foreach(var h in new double[]{28,26,28,1,-1,20}) shell.RowDefinitions.Add(new RowDefinition{Height=h<0?new GridLength(1,GridUnitType.Star):new GridLength(h)});
   Titlebar(); Tabs(); Toolbar(); Put(shell,new Border{Background=Line},3);
@@ -261,7 +261,7 @@ public partial class PanelWindow : Window {
 public static class Program {
  [STAThread]public static void Main(string[] args){try{
   string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow();if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
-  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"||args[3]=="hero-visuals"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="hero-visuals")window.PreviewHeroVisualScope(args[1]);else if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
+  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"||args[3]=="hero-visuals"||args[3]=="triggers"||args[3]=="deathrattle"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="deathrattle")window.PreviewDeathrattleScope(args[1]);else if(args[3]=="triggers")window.PreviewTriggerScope(args[1]);else if(args[3]=="hero-visuals")window.PreviewHeroVisualScope(args[1]);else if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
   app.Run(window);
  }catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"startup-error.txt"),ex.ToString());Environment.ExitCode=1;}
  }
