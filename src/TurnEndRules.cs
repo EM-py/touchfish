@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 namespace Touchfish {
 public static class TurnEndRules {
@@ -7,7 +7,7 @@ public static class TurnEndRules {
  public static bool HasTrigger(string id){return id=="NEW1_009"||id=="EX1_tk9b"||new[]{"CS2_059","EX1_004","EX1_249","EX1_274","EX1_298","EX1_572","EX1_575","EX1_597","NEW1_037","NEW1_038","NEW1_040"}.Contains(id);}
 }
 public sealed partial class MatchEngine {
- public bool CanUseCard(int seat,CardRecord card){return card.Type=="SPELL"|| card.CardClass=="NEUTRAL"||card.CardClass==Players[seat].ClassId||!card.Collectible&&TurnEndRules.DreamIds.Contains(card.Id);}
+ public bool CanUseCard(int seat,CardRecord card){return card.Type=="SPELL"|| card.CardClass=="NEUTRAL"||card.CardClass==Players[seat].ClassId||!card.Collectible&&(TurnEndRules.DreamIds.Contains(card.Id)||card.Id=="GAME_WORTHLESS_IMP");}
  public void GenerateCard(int seat,string id){var p=Players[seat];if(p.Hand.Count>=10){Log.Add("玩家 "+(seat+1)+" · 手牌已满，未获得梦境牌。");return;}p.Hand.Add(new HandCard{Id=nextId++,CardId=id});Log.Add("玩家 "+(seat+1)+" · 获得梦境牌 1 张。");}
  public void DelayDestroy(MatchTarget target,bool atStart,int seat){var unit=Unit(target);if(unit==null)return;if(!atStart)unit.DestroyAtEnd=Turn;else if(seat==0)unit.DestroyAtStart0=Turn+2;else unit.DestroyAtStart1=Turn+2;}
  public void TakeTemporaryControl(int seat,MatchTarget target){var unit=Unit(target);int previous=unit.Owner;Players[previous].Board.Remove(unit);unit.ReturnSeat=previous;unit.ReturnTurn=Turn;unit.Owner=seat;unit.SummonTurn=Turn;unit.AttacksUsed=0;Players[seat].Board.Add(unit);RefreshAuras();}
