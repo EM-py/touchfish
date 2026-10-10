@@ -36,7 +36,8 @@ public partial class PanelWindow : Window {
  bool minimal, codex, dark, previewRun; string currentPage="game";
  Dictionary<Border,string[]> slotLabels=new Dictionary<Border,string[]>(); List<Border> handCards=new List<Border>();
  Grid detailHeader; Button detailBack;
- public PanelWindow() {
+ public PanelWindow(bool isPreview=false) {
+  previewRun=isPreview;
   Title="协作面板 · "+AppRelease.Version; Width=548; Height=474; MinWidth=548; MinHeight=474; FontWeight=FontWeights.Normal;
   WindowStartupLocation=WindowStartupLocation.CenterScreen; WindowStyle=WindowStyle.None;
   ResizeMode=ResizeMode.NoResize; Background=B("#FFFFFF"); FontFamily=new FontFamily("Microsoft YaHei UI");
@@ -260,7 +261,7 @@ public partial class PanelWindow : Window {
 }
 public static class Program {
  [STAThread]public static void Main(string[] args){try{
-  string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow();if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
+  string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow(args.Length>0&&args[0]=="--preview");if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
   if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"||args[3]=="hero-visuals"||args[3]=="triggers"||args[3]=="deathrattle"||args[3]=="druid-spells"||args[3]=="emote-selection"||args[3]=="overload"||args[3]=="spell-cards"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="spell-cards")window.PreviewSpellCardsScope(args[1]);else if(args[3]=="overload")window.PreviewOverloadScope(args[1]);else if(args[3]=="emote-selection")window.PreviewEmoteSelectionScope(args[1]);else if(args[3]=="druid-spells")window.PreviewDruidSpellScope(args[1]);else if(args[3]=="deathrattle")window.PreviewDeathrattleScope(args[1]);else if(args[3]=="triggers")window.PreviewTriggerScope(args[1]);else if(args[3]=="hero-visuals")window.PreviewHeroVisualScope(args[1]);else if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
   app.Run(window);
  }catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"startup-error.txt"),ex.ToString());Environment.ExitCode=1;}
