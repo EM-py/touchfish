@@ -17,7 +17,7 @@ public static class DeathrattleRules {
   {"EX1_577",(g,u)=>g.Summon(1-u.Owner,"VAN_EX1_finkle")}
  };
  public static string[] CardIds{get{return effects.Keys.ToArray();}}
- public static void Resolve(MatchEngine game,BattleUnit unit){Action<MatchEngine,BattleUnit> effect;if(unit.Silenced||!effects.TryGetValue(game.Card(unit.CardId).BaseId,out effect))return;game.Log.Add("玩家 "+(unit.Owner+1)+" · 亡语："+game.Card(unit.CardId).Name);effect(game,unit);}
+ public static void Resolve(MatchEngine game,BattleUnit unit){Action<MatchEngine,BattleUnit> effect;if(!unit.Silenced&&effects.TryGetValue(game.Card(unit.CardId).BaseId,out effect)){game.Log.Add("玩家 "+(unit.Owner+1)+" · 亡语："+game.Card(unit.CardId).Name);effect(game,unit);}if(unit.ForestDeathrattles>0){game.Log.Add("玩家 "+(unit.Owner+1)+" · 丛林之魂亡语："+game.Card(unit.CardId).Name);SummonAtDeath(game,unit,"VAN_EX1_tk9",unit.ForestDeathrattles);}}
  static void SummonAtDeath(MatchEngine game,BattleUnit unit,string id,int count){var board=game.Players[unit.Owner].Board;int position=board.FindIndex(u=>u.Id==unit.DeathAnchor);if(position<0)position=board.Count;for(int i=0;i<count;i++){if(game.Summon(unit.Owner,id,position)==null)break;position++;}}
 }
 public sealed partial class MatchEngine {

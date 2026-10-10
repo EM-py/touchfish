@@ -9,7 +9,7 @@ public sealed class MatchRules {
  public IEnumerable<string> RegisteredIds{get{return effects.Keys;}}
  static readonly string[] SimpleMechanics={"TAUNT","CHARGE","DIVINE_SHIELD","WINDFURY","POISONOUS","STEALTH","SPELLPOWER","CANT_ATTACK","CANT_BE_TARGETED_BY_ABILITIES","ELUSIVE","OVERLOAD"};
  public MatchRules(CardCatalog source){catalog=source;
-  Register("GAME_COIN","NONE",c=>c.Game.Players[c.Seat].Mana=Math.Min(10,c.Game.Players[c.Seat].Mana+1));
+  Register("GAME_COIN","NONE",c=>OverloadRules.GainTemporaryMana(c.Game,c.Seat,1));
   Damage("CS2_029",6);Damage("CS1_130",2);Damage("CS2_008",1);Damage("DS1_185",2);Damage("EX1_238",3);Damage("EX1_241",5);Damage("EX1_279",10);Damage("CS2_057",4,"MINION");Damage("CS2_072",2,"UNDAMAGED_MINION");
   Register("CS2_024","ANY_CHARACTER",c=>{Hit(c,3);c.Game.Freeze(c.Target);});Register("CS2_037","ENEMY_CHARACTER",c=>{Hit(c,1);c.Game.Freeze(c.Target);});Register("CS2_031","ANY_CHARACTER",c=>{var unit=c.Game.Unit(c.Target);bool frozen=c.Target.Hero?c.Game.Players[c.Target.Seat].Frozen:unit.Frozen;if(frozen)Hit(c,4);else c.Game.Freeze(c.Target);});
   Register("CS2_022","MINION",c=>c.Game.Transform(c.Target,"VAN_CS2_tk1"));
@@ -17,8 +17,13 @@ public sealed class MatchRules {
   Register("CS2_025","NONE",c=>Area(c,1-c.Seat,1,false));Register("CS2_032","NONE",c=>Area(c,1-c.Seat,4,false));Register("CS2_028","NONE",c=>{Area(c,1-c.Seat,2,false);foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Freeze(target);});Register("CS2_026","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Freeze(target);});
   Register("CS2_027","NONE",c=>{c.Game.Summon(c.Seat,"VAN_CS2_mirror");c.Game.Summon(c.Seat,"VAN_CS2_mirror");},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
   Register("EX1_277","NONE",c=>Missiles(c,3));Register("EX1_384","NONE",c=>Missiles(c,8));
+  Register("CS2_013","NONE",c=>DruidSpellRules.WildGrowth(c.Game,c.Seat));
+  Register("EX1_158","NONE",c=>DruidSpellRules.SoulOfForest(c.Game,c.Seat));
+  Register("EX1_578","MINION",c=>Hit(c,c.Game.HeroAttack(c.Seat)));
+  Register("GAME_EXCESS_MANA","NONE",c=>c.Game.Draw(c.Seat,1));
+  Register("EX1_251","NONE",c=>c.Game.ForkedLightning(c.Seat),(g,s)=>g.Players[1-s].Board.Count<2?"对方至少需要两个随从。":null);
   Register("CS2_007","ANY_CHARACTER",c=>c.Game.Heal(c.Target,8));Register("CS2_089","ANY_CHARACTER",c=>c.Game.Heal(c.Target,6));Register("EX1_354","ANY_CHARACTER",c=>{c.Game.Heal(c.Target,8);c.Game.Draw(c.Seat,3);});
-  Register("CS2_005","NONE",c=>{c.Game.Players[c.Seat].Armor+=2;c.Game.Players[c.Seat].TempAttack+=2;});Register("EX1_570","NONE",c=>{c.Game.Players[c.Seat].Armor+=4;c.Game.Players[c.Seat].TempAttack+=4;});Register("EX1_169","NONE",c=>c.Game.Players[c.Seat].Mana=Math.Min(10,c.Game.Players[c.Seat].Mana+2));
+  Register("CS2_005","NONE",c=>{c.Game.Players[c.Seat].Armor+=2;c.Game.Players[c.Seat].TempAttack+=2;});Register("EX1_570","NONE",c=>{c.Game.Players[c.Seat].Armor+=4;c.Game.Players[c.Seat].TempAttack+=4;});Register("EX1_169","NONE",c=>OverloadRules.GainTemporaryMana(c.Game,c.Seat,2));
   Register("CS2_009","MINION",c=>{c.Game.Buff(c.Target,2,2);c.Game.Unit(c.Target).Taunt=true;});Register("CS2_011","NONE",c=>{c.Game.Players[c.Seat].TempAttack+=2;foreach(var unit in c.Game.Players[c.Seat].Board)unit.TempAttack+=2;});
   Register("CS2_012","ENEMY_CHARACTER",c=>{Hit(c,4);foreach(var target in c.Game.Characters(1-c.Seat))if(target.UnitId!=c.Target.UnitId)c.Game.Damage(target,1+c.Game.SpellPower(c.Seat));});
   Register("EX1_173","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Draw(c.Seat,1);});Register("EX1_161","MINION",c=>{Kill(c);c.Game.Draw(1-c.Seat,2);});
