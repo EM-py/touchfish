@@ -3,6 +3,7 @@
 namespace Touchfish {
 public static class MinionSpeechRules {
  static readonly Dictionary<string,string> entrances=new Dictionary<string,string>{
+  {"EX1_323","我是加拉克苏斯，燃烧军团的艾瑞达之王"},
   {"EX1_557","我能在河边钓上一整天的鱼。"},
   {"NEW1_029","你等着，等我有十点法力值的时候！"},
   {"EX1_100","愿青龙指引你。"}

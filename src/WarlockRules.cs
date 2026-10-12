@@ -14,7 +14,7 @@ public static class WarlockRules {
   case "EX1_317":g.SenseDemons(c.Seat);break;
   case "EX1_320":int dealt=g.Damage(c.Target,g.SpellDamageAmount(c.Seat,3));bool killed=c.Target.Hero?g.Players[c.Target.Seat].Health<=0:g.Unit(c.Target).Health<=0;if(dealt>0&&killed){g.Cleanup();g.Summon(c.Seat,BaneDemons[g.RandomIndex(BaneDemons.Length)]);}break;
   case "EX1_596":var unit=g.Unit(c.Target);if(unit.Owner==c.Seat&&unit.Race=="DEMON")g.Buff(c.Target,2,2);else g.Damage(c.Target,g.SpellDamageAmount(c.Seat,2));break;
-  case "NEW1_003":var demon=g.Unit(c.Target);demon.DamageTaken=demon.MaxHealth;g.RestoreHealth(c.Seat,new MatchTarget(c.Seat),5,true,true);break;
+  case "NEW1_003":if(c.Target.Hero)g.DestroyHero(c.Target.Seat);else{var demon=g.Unit(c.Target);demon.DamageTaken=demon.MaxHealth;}g.RestoreHealth(c.Seat,new MatchTarget(c.Seat),5,true,true);break;
  }}
 }
 public sealed partial class MatchEngine {

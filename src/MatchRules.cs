@@ -80,7 +80,7 @@ public sealed class MatchRules {
   foreach(string id in ConditionalTriggerRules.CardIds)Register(id,"NONE",c=>{});
   Register("NEW1_029","NONE",c=>TimedCostRules.GrantFreeSpells(c.Game,1-c.Seat,c.Game.Turn+1));
   foreach(string id in EnrageRules.Ids)Register(id,"NONE",c=>{});
-  Register("CS2_063","ENEMY_MINION",WarlockRules.Apply);Register("CS2_064","NONE",WarlockRules.Apply);Register("EX1_301","NONE",WarlockRules.Apply);Register("EX1_303","FRIENDLY_MINION",WarlockRules.Apply);Register("EX1_304","NONE",WarlockRules.Apply);Register("EX1_313","NONE",WarlockRules.Apply);Register("EX1_317","NONE",WarlockRules.Apply);Register("EX1_320","ANY_CHARACTER",WarlockRules.Apply);Register("EX1_596","MINION",WarlockRules.Apply);Register("NEW1_003","DEMON_MINION",WarlockRules.Apply);
+  Register("CS2_063","ENEMY_MINION",WarlockRules.Apply);Register("CS2_064","NONE",WarlockRules.Apply);Register("EX1_301","NONE",WarlockRules.Apply);Register("EX1_303","FRIENDLY_MINION",WarlockRules.Apply);Register("EX1_304","NONE",WarlockRules.Apply);Register("EX1_313","NONE",WarlockRules.Apply);Register("EX1_317","NONE",WarlockRules.Apply);Register("EX1_320","ANY_CHARACTER",WarlockRules.Apply);Register("EX1_596","MINION",WarlockRules.Apply);Register("NEW1_003","DEMON_CHARACTER",WarlockRules.Apply);
   Register("CS2_233","NONE",RogueRules.Apply,(g,s)=>g.Players[s].WeaponDurability<=0?"需要先装备武器。":null);Register("EX1_126","ENEMY_MINION",RogueRules.Apply);Register("EX1_128","NONE",RogueRules.Apply);Register("EX1_144","FRIENDLY_MINION",RogueRules.Apply);Register("EX1_145","NONE",RogueRules.Apply);Register("EX1_522","NONE",RogueRules.Apply);Register("NEW1_004","NONE",RogueRules.Apply);Register("NEW1_014","FRIENDLY_MINION",RogueRules.Apply);Register("NEW1_017","MURLOC_MINION",RogueRules.Apply);
   Register("CS2_104","DAMAGED_MINION",WarriorRules.Apply);Register("CS2_114","NONE",WarriorRules.Apply,(g,s)=>g.Players[1-s].Board.Count<2?"对方至少需要两个随从。":null);
   foreach(string id in new[]{"EX1_084","EX1_392","EX1_398","EX1_409","EX1_411","NEW1_036"})Register(id,"NONE",WarriorRules.Apply);
@@ -96,6 +96,10 @@ public sealed class MatchRules {
   foreach(string id in new[]{"CS2_003","EX1_339","EX1_625"})Register(id,"NONE",PriestRules.Apply);
   Register("EX1_345","NONE",PriestRules.Apply,(g,seat)=>g.Players[seat].Board.Count>=g.Mode.BoardSlots?"己方战场已满。":null);
   Register("EX1_623","FRIENDLY_MINION",PriestRules.Apply);
+  Register("EX1_275","MINION",MageRules.Apply);Register("EX1_612","NONE",MageRules.Apply);
+  Register("CS2_088","NONE",PaladinRules.Apply);Register("EX1_366","NONE",c=>{});
+  Register("CS2_038","MINION",ShamanRules.Apply);Register("CS2_042","ANY_CHARACTER",ShamanRules.Apply);Register("CS2_053","NONE",ShamanRules.Apply);Register("EX1_244","NONE",ShamanRules.Apply);Register("EX1_246","MINION",ShamanRules.Apply);Register("EX1_587","FRIENDLY_MINION",ShamanRules.Apply);
+  Register("EX1_323","NONE",HeroReplacementRules.Jaraxxus);
   RuleModules.Configure(this);
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}

@@ -29,5 +29,9 @@
   "WarriorRules.cs",
   "PublicMatchState.cs",
   "RuleModules.cs",
-  "PriestRules.cs"
+  "PriestRules.cs",
+  "MageRules.cs",
+  "PaladinRules.cs",
+  "ShamanRules.cs",
+  "HeroReplacementRules.cs"
 ]
