@@ -13,6 +13,7 @@ public sealed class ResolutionQueue {
 public sealed partial class MatchEngine {
  BattleUnit[] damageListeners;ResolutionQueue damageTriggers;
  void FlushDamageTriggers(){var pending=damageTriggers;damageTriggers=null;damageListeners=null;if(pending!=null)pending.Drain();}
+ void TriggerHealing(BattleUnit unit,int amount){Action notify=()=>ConditionalTriggerRules.Resolve(this,MatchTriggerTiming.MinionHealed,unit.Owner,healed:unit,amount:amount);if(damageTriggers==null)notify();else damageTriggers.Enqueue(notify);}
  void TriggerDamage(BattleUnit unit,int amount,BattleUnit[] listeners){if(damageTriggers==null)ConditionalTriggerRules.MinionDamaged(this,unit,amount,listeners);else damageTriggers.Enqueue(()=>ConditionalTriggerRules.MinionDamaged(this,unit,amount,listeners));}
  // A simultaneous damage batch retains the listeners present before its first hit,
  // including mortally wounded listeners until death processing starts.

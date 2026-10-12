@@ -8,13 +8,13 @@ public static class WarlockRules {
   case "CS2_063":g.DelayDestroy(c.Target,true,c.Seat);break;
   case "CS2_064":foreach(var target in g.Characters(0).Concat(g.Characters(1)).Where(t=>t.Hero||t.UnitId!=c.Summoned.Id).ToArray())g.Damage(target,1);break;
   case "EX1_301":var p=g.Players[c.Seat];if(p.MaxMana>0){bool filled=p.Mana>=p.MaxMana-p.LockedMana;p.MaxMana--;p.LockedMana=Math.Min(p.LockedMana,p.MaxMana);if(filled)p.Mana=Math.Max(0,p.Mana-1);}break;
-  case "EX1_303":var sacrifice=g.Unit(c.Target);int damage=g.AttackValue(sacrifice)+g.SpellPower(c.Seat);sacrifice.DamageTaken=sacrifice.MaxHealth;foreach(var target in g.Characters(1-c.Seat,false).ToArray())g.Damage(target,damage);break;
+  case "EX1_303":var sacrifice=g.Unit(c.Target);int damage=g.SpellDamageAmount(c.Seat,g.AttackValue(sacrifice));sacrifice.DamageTaken=sacrifice.MaxHealth;foreach(var target in g.Characters(1-c.Seat,false).ToArray())g.Damage(target,damage);break;
   case "EX1_304":g.ConsumeNeighbors(c.Seat,c.Summoned);break;
   case "EX1_313":g.Damage(new MatchTarget(c.Seat),5);break;
   case "EX1_317":g.SenseDemons(c.Seat);break;
-  case "EX1_320":int dealt=g.Damage(c.Target,3+g.SpellPower(c.Seat));bool killed=c.Target.Hero?g.Players[c.Target.Seat].Health<=0:g.Unit(c.Target).Health<=0;if(dealt>0&&killed){g.Cleanup();g.Summon(c.Seat,BaneDemons[g.RandomIndex(BaneDemons.Length)]);}break;
-  case "EX1_596":var unit=g.Unit(c.Target);if(unit.Owner==c.Seat&&unit.Race=="DEMON")g.Buff(c.Target,2,2);else g.Damage(c.Target,2+g.SpellPower(c.Seat));break;
-  case "NEW1_003":var demon=g.Unit(c.Target);demon.DamageTaken=demon.MaxHealth;g.Heal(new MatchTarget(c.Seat),5);break;
+  case "EX1_320":int dealt=g.Damage(c.Target,g.SpellDamageAmount(c.Seat,3));bool killed=c.Target.Hero?g.Players[c.Target.Seat].Health<=0:g.Unit(c.Target).Health<=0;if(dealt>0&&killed){g.Cleanup();g.Summon(c.Seat,BaneDemons[g.RandomIndex(BaneDemons.Length)]);}break;
+  case "EX1_596":var unit=g.Unit(c.Target);if(unit.Owner==c.Seat&&unit.Race=="DEMON")g.Buff(c.Target,2,2);else g.Damage(c.Target,g.SpellDamageAmount(c.Seat,2));break;
+  case "NEW1_003":var demon=g.Unit(c.Target);demon.DamageTaken=demon.MaxHealth;g.RestoreHealth(c.Seat,new MatchTarget(c.Seat),5,true,true);break;
  }}
 }
 public sealed partial class MatchEngine {

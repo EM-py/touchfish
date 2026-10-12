@@ -8,7 +8,7 @@ public static class TurnEndRules {
  public static bool HasTrigger(string id){return TriggerIds.Contains(id);}
 }
 public sealed partial class MatchEngine {
- public bool CanUseCard(int seat,CardRecord card){return card.Type=="SPELL"|| card.CardClass=="NEUTRAL"||card.CardClass==Players[seat].ClassId||!card.Collectible&&(TurnEndRules.DreamIds.Contains(card.Id)||card.Id=="GAME_WORTHLESS_IMP");}
+ public bool CanUseCard(int seat,CardRecord card,HandCard hand=null){return hand!=null&&hand.Generated|| card.Type=="SPELL"|| card.CardClass=="NEUTRAL"||card.CardClass==Players[seat].ClassId||!card.Collectible&&(TurnEndRules.DreamIds.Contains(card.Id)||card.Id=="GAME_WORTHLESS_IMP");}
  public void GenerateCard(int seat,string id){var p=Players[seat];if(p.Hand.Count>=Mode.HandLimit){Log.Add("玩家 "+(seat+1)+" · 手牌已满，未获得梦境牌。");return;}p.Hand.Add(new HandCard{Id=nextId++,CardId=id});Log.Add("玩家 "+(seat+1)+" · 获得梦境牌 1 张。");}
  public void DelayDestroy(MatchTarget target,bool atStart,int seat){var unit=Unit(target);if(unit==null)return;if(!atStart)unit.DestroyAtEnd=Turn;else if(seat==0)unit.DestroyAtStart0=Turn+2;else unit.DestroyAtStart1=Turn+2;}
  public void TakeTemporaryControl(int seat,MatchTarget target){var unit=Unit(target);int previous=unit.Owner;Players[previous].Board.Remove(unit);unit.ReturnSeat=previous;unit.ReturnTurn=Turn;unit.Owner=seat;unit.SummonTurn=Turn;unit.AttacksUsed=0;Players[seat].Board.Add(unit);RefreshAuras();}
@@ -25,7 +25,7 @@ public sealed partial class MatchEngine {
   case "EX1_597":int position=Players[owner].Board.IndexOf(source);Damage(new MatchTarget(owner,source.Id),1);Cleanup();if(!Finished)Summon(owner,"VAN_EX1_598",Players[owner].Board.Contains(source)?Players[owner].Board.IndexOf(source)+1:position);break;
   case "NEW1_038":Buff(new MatchTarget(owner,source.Id),1,1);break;
   case "NEW1_040":Summon(owner,"GAME_GNOLL",Players[owner].Board.IndexOf(source)+1);break;
-  case "NEW1_009":foreach(var unit in Players[owner].Board.ToArray())Heal(new MatchTarget(owner,unit.Id),1);break;
+  case "NEW1_009":foreach(var unit in Players[owner].Board.ToArray())RestoreHealth(owner,new MatchTarget(owner,unit.Id),1);break;
   case "EX1_tk9b":DestroyUnit(source);break;
  }}
  void ResolveEndDelayed(){foreach(var unit in Players.SelectMany(p=>p.Board).Where(u=>u.DestroyAtEnd>=0&&u.DestroyAtEnd<=Turn).ToArray()){Log.Add("回合结束到期 · "+Card(unit.CardId).Name);DestroyUnit(unit);}Cleanup();if(Finished)return;foreach(var unit in Players.SelectMany(p=>p.Board).Where(u=>u.ReturnTurn>=0&&u.ReturnTurn<=Turn).ToArray()){int owner=unit.Owner,back=unit.ReturnSeat;Players[owner].Board.Remove(unit);unit.ReturnSeat=unit.ReturnTurn=-1;if(Players[back].Board.Count>=Mode.BoardSlots){Log.Add("返还时战场已满 · "+Card(unit.CardId).Name);DestroyUnit(unit);Players[owner].Board.Add(unit);Cleanup();}else{unit.Owner=back;unit.AttacksUsed=0;unit.SummonTurn=Turn;Players[back].Board.Add(unit);Log.Add("返还控制权 · "+Card(unit.CardId).Name);RefreshAuras();}}Cleanup();}

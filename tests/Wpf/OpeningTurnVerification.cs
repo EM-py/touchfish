@@ -22,7 +22,7 @@ public partial class PanelWindow {
   Check(shortGame.Players[0].Fatigue==1&&shortGame.Players[0].Health==29&&shortGame.Players[0].Hand.Count==3,"Empty test deck applies first-turn fatigue instead of skipping draw");
   Check(shortGame.Players.All(p=>p.Mana==10&&p.MaxMana==10),"Test first-turn draw preserves ten full crystals");
   var normalTest=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),12,true);normalTest.Mulligan(0,new int[0]);normalTest.Mulligan(1,new int[0]);Check(normalTest.Players[0].Hand.Count==4&&normalTest.Players[0].Mana==10,"Test full deck also draws first turn");
-  VerifyLan(folder);
+  VerifyGuestFirstTcp(folder);VerifyLan(folder);
   LeaveLan();ApplyTheme(true,true);ApplyMode(false);SetFullEffects(false);match=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),31);match.Mulligan(0,new int[0]);match.Mulligan(1,new int[0]);matchViewSeat=0;awaitHandoff=false;ClearPending();RenderMatch();ShowPage("match");Render(Path.Combine(folder,"105-opening-first-turn.png"));Check(match.Players[0].Hand.Count==4&&Width==548&&Height==474,"First-turn hand appears in fixed WPF window");
   File.WriteAllText(Path.Combine(folder,"opening-turn-verification.txt"),"PASS: "+(checks-before)+" focused opening and real loopback TCP assertions. Confirmation order, replacements, first draw, coin, repeated confirmation, following turns, fatigue, test crystals and opponent hand privacy.");
  }

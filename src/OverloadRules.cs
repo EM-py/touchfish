@@ -11,6 +11,6 @@ public static class OverloadRules {
  public static bool IsFilled(MatchPlayer player,int slot){if(IsLocked(player,slot))return false;int before=slot>=player.MaxMana?player.LockedMana:0;return slot-before<player.Mana;}
 }
 public sealed partial class MatchEngine {
- public void ForkedLightning(int seat){var targets=Characters(1-seat,false).ToList();int amount=2+SpellPower(seat);for(int i=0;i<2;i++){var target=RandomTarget(targets);if(target==null)break;targets.Remove(target);Damage(target,amount);}}
+ public void ForkedLightning(int seat){var targets=Characters(1-seat,false).ToList();int amount=SpellDamageAmount(seat,2);for(int i=0;i<2;i++){var target=RandomTarget(targets);if(target==null)break;targets.Remove(target);Damage(target,amount);}}
 }
 }

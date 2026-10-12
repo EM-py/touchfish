@@ -28,5 +28,6 @@
   "WarlockRules.cs",
   "WarriorRules.cs",
   "PublicMatchState.cs",
-  "RuleModules.cs"
+  "RuleModules.cs",
+  "PriestRules.cs"
 ]

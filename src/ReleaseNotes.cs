@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.5.0",Date="2026-10-12";
- public static readonly string[] PatchNotes={"扩展接口与按需测试重构，保留 302 / 382 张已支持卡牌和办公界面。","规则测试独立运行，按模块与改动选择；界面、TCP 与发布完整检查分层调用。","集中模式配置、附加效果与触发注册；公开状态使用白名单，局域网协议 2 按确认序号增量同步记录。"};
+ public const string Version="v0.5.1",Date="2026-10-12";
+ public static readonly string[] PatchNotes={"经典牧师全部 25 张职业牌可用，总支持 314 / 382；补齐复制、控场、北郡、光明之泉、光耀之子、奥金尼、维伦、暗影形态与圣殿执行者。","治疗按来源统一结算，维伦翻倍法术和技能，奥金尼转换治疗；偷来的职业随从和武器可在对局使用，组牌仍绑定职业。","局域网随机决定先后手，固定己方视角保留；起手、幸运币、首回合抽牌与法力按实际先后手分配。","暗影步保持回手减两费、重新打出后清除的原规则；不跨登场累计。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.5.0",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.5.1",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.5.0","2026-10-12",new[]{"扩展接口与按需测试重构，保留 302 / 382 张已支持卡牌和办公界面。","规则测试独立运行，按模块与改动选择；界面、TCP 与发布完整检查分层调用。","集中模式配置、附加效果与触发注册；公开状态使用白名单，局域网协议 2 按确认序号增量同步记录。"}));
   body.Children.Add(ReleaseSection("v0.4.7","2026-10-12",new[]{"经典战士全部 25 张职业牌及 15 张经典奥秘可用，支持 302 / 382。","新增受伤触发、命令怒吼、战歌冲锋和武器规则；奥秘匿名挂出、英雄问号标记，触发时公开并按顺序结算。"}));
   body.Children.Add(ReleaseSection("v0.4.6","2026-10-10",new[]{"盗贼全部 25 张职业牌和鱼人杀手蟹可用，支持 276 / 382。","支持暗影步手牌减费、伺机待发、临时潜行、剑刃乱舞、背叛、耐心刺客和消失；满手牌回手会销毁并处理亡语与墓地。"}));
   body.Children.Add(ReleaseSection("v0.4.5","2026-10-10",new[]{"后台墓地记录死亡随从、已施放法术和其他离场原因，为后续复活预留；不增加查看入口。","合并四张鱼人牌：寒光智者、寒光先知、老瞎眼与鱼人招潮者，支持 267 / 382。","更新日志按 v0.4.0、v0.3.0 等系列折叠，展开后查看各版本详情。","普通模式开启特效时，加成后的攻击显示绿色，实际受伤的生命显示红色；设为 1 生命上限不视为受伤。"}));

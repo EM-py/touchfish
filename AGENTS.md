@@ -80,3 +80,9 @@
 - 核心通过 tests/core-sources.json 明确选入纯规则测试编译，不依赖 WPF。模式定义 GameModes、附加效果 EnchantmentCollection、FIFO ResolutionQueue、模块注册 RuleModules、公开白名单 PublicPlayerState 及协议 2 的已确认日志增量均已接入；新增数据字段不得通过反射自动暴露，新增随从附加效果通过集合与显式复制处理。经典仍为两人七槽，不新增模式界面或公网服务。
 
 - 用户已明确授权本批扩展接口与按需测试重构发布 v0.5.0；支持仍为 302 / 382，协议 2，发布前跑 scripts/test.ps1 -Scope full -Layer all 与正式 WPF 外观预览。发布后清理本方分支，后续提交上传另获授权。
+
+- 当前本地修复未授权 Git 提交上传：局域网随机 FirstSeat，host/guest 编号仍为 0/1；换牌、幸运币、初始法力和首回合抽牌依 FirstSeat/SecondSeat 分配。本地 test 继续固定开局视角。按用户最新要求，暗影步保留原结算：减费只绑定回手后的手牌实例，重新打出后清除，再次暗影步重新减两费，不累计；普通回手与冻结陷阱仍分别设置本次费用调整。使用 opening、shadowstep 纯规则范围与 opening-turn、rogue 联机范围验证。
+
+- 当前牧师全职业牌本地开发未发布，版本保持 v0.5.0，未授权提交上传：牧师 25 / 25，总支持 314 / 382。PriestRules 负责复制与控制、来源治疗、维伦翻倍、奥金尼转换及暗影形态；MinionHealed 接入公共条件触发与批次 FIFO。复制手牌 Generated 由房主赋予，对局允许对应跨职业随从与武器，不放开组牌；临时控制随从回手归当前控制者。Shadowform 进入公开白名单，手牌身份仍私有。日常使用 -Scope priest；联机使用 -Scope priest -Layer network。
+
+- 用户已明确授权将牧师全部职业牌、随机先后手修复与暗影步原规则整合发布 v0.5.1；支持 314 / 382，协议仍为 2。发布同步 AppRelease、程序集、VERSION、CHANGELOG 与 README，运行发布完整回归和正式 WPF 预览。合并后清理本方功能分支；后续提交上传另获授权。
