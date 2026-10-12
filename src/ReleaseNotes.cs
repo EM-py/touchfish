@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.5.2",Date="2026-10-12";
- public static readonly string[] PatchNotes={"法师、圣骑士、萨满和术士各 25 / 25 张经典职业牌可用，总支持 328 / 382。","补齐冰锥术、安东尼达斯、肯瑞托法师、法力浮龙、公正之剑、先祖之魂、视界术、妖术等剩余效果。","加拉克苏斯替换为 15 血上限、3/8 血怒和地狱火技能；英雄与技能接口独立，指定登场台词仅普通且特效全开显示。","先祖之魂接入公共附加亡语，按位置和施加顺序结算；变形不触发召唤，保持手牌隐私、办公窗口与按需测试。"};
+ public const string Version="v0.5.3",Date="2026-10-12";
+ public static readonly string[] PatchNotes={"补齐 12 张中立 1 / 2 费牌，兼容合并猎人职业牌，总支持 351 / 382。","猎人经典 25 / 25 可用：追踪术私下选牌、野兽召唤与死亡、武器和法术效果；保留当前奥秘与扩展接口。","新增角色治疗、召唤后与施法后公共触发，包含飞刀、炎术师、圣光护卫者、魔瘾者等；战吼和触发按阶段结算。","狂野怒火攻击与免疫在回合结束失效；追踪候选只给本人，不泄露到共享记录。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.5.2",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.5.3",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.5.2","2026-10-12",new[]{"法师、圣骑士、萨满和术士各 25 / 25 张经典职业牌可用，总支持 328 / 382。","补齐冰锥术、安东尼达斯、肯瑞托法师、法力浮龙、公正之剑、先祖之魂、视界术、妖术等剩余效果。","加拉克苏斯替换为 15 血上限、3/8 血怒和地狱火技能；英雄与技能接口独立，指定登场台词仅普通且特效全开显示。","先祖之魂接入公共附加亡语，按位置和施加顺序结算；变形不触发召唤，保持手牌隐私、办公窗口与按需测试。"}));
   body.Children.Add(ReleaseSection("v0.5.1","2026-10-12",new[]{"经典牧师全部 25 张职业牌可用，总支持 314 / 382；补齐复制、控场、北郡、光明之泉、光耀之子、奥金尼、维伦、暗影形态与圣殿执行者。","治疗按来源统一结算，维伦翻倍法术和技能，奥金尼转换治疗；偷来的职业随从和武器可在对局使用，组牌仍绑定职业。","局域网随机决定先后手，固定己方视角保留；起手、幸运币、首回合抽牌与法力按实际先后手分配。","暗影步保持回手减两费、重新打出后清除的原规则；不跨登场累计。"}));
   body.Children.Add(ReleaseSection("v0.5.0","2026-10-12",new[]{"扩展接口与按需测试重构，保留 302 / 382 张已支持卡牌和办公界面。","规则测试独立运行，按模块与改动选择；界面、TCP 与发布完整检查分层调用。","集中模式配置、附加效果与触发注册；公开状态使用白名单，局域网协议 2 按确认序号增量同步记录。"}));
   body.Children.Add(ReleaseSection("v0.4.7","2026-10-12",new[]{"经典战士全部 25 张职业牌及 15 张经典奥秘可用，支持 302 / 382。","新增受伤触发、命令怒吼、战歌冲锋和武器规则；奥秘匿名挂出、英雄问号标记，触发时公开并按顺序结算。"}));

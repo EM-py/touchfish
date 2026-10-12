@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,6 +14,6 @@ public sealed partial class MatchEngine {
  readonly List<GraveyardEntry> graveyard=new List<GraveyardEntry>();
  public ReadOnlyCollection<GraveyardEntry> Graveyard{get{return graveyard.AsReadOnly();}}
  public GraveyardEntry[] GraveyardFor(int seat,GraveyardReason? reason=null,string cardType=null){if(seat<0||seat>1)throw new ArgumentOutOfRangeException("seat");return graveyard.Where(e=>e.Seat==seat&&(!reason.HasValue||e.Reason==reason.Value)&&(cardType==null||e.CardType==cardType)).ToArray();}
- void RecordGraveyard(int seat,int originalOwner,string cardId,int instance,GraveyardReason reason,int attack=0,int health=0){graveyard.Add(new GraveyardEntry(graveyard.Count+1,Turn,seat,originalOwner,cardId,Card(cardId).Type,instance,reason,attack,health));}
+ internal void RecordGraveyard(int seat,int originalOwner,string cardId,int instance,GraveyardReason reason,int attack=0,int health=0){graveyard.Add(new GraveyardEntry(graveyard.Count+1,Turn,seat,originalOwner,cardId,Card(cardId).Type,instance,reason,attack,health));}
 }
 }
