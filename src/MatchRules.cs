@@ -10,6 +10,7 @@ public sealed class MatchRules {
  static readonly string[] SimpleMechanics={"TAUNT","CHARGE","DIVINE_SHIELD","WINDFURY","POISONOUS","STEALTH","SPELLPOWER","CANT_ATTACK","CANT_BE_TARGETED_BY_ABILITIES","ELUSIVE","OVERLOAD"};
  public MatchRules(CardCatalog source){catalog=source;
   Register("GAME_COIN","NONE",c=>OverloadRules.GainTemporaryMana(c.Game,c.Seat,1));
+  foreach(string id in SecretRules.CardIds)Register(id,"NONE",c=>{});
   Damage("CS2_029",6);Damage("CS1_130",2);Damage("CS2_008",1);Damage("DS1_185",2);Damage("EX1_238",3);Damage("EX1_241",5);Damage("EX1_279",10);Damage("CS2_057",4,"MINION");Damage("CS2_072",2,"UNDAMAGED_MINION");
   Register("CS2_024","ANY_CHARACTER",c=>{Hit(c,3);c.Game.Freeze(c.Target);});Register("CS2_037","ENEMY_CHARACTER",c=>{Hit(c,1);c.Game.Freeze(c.Target);});Register("CS2_031","ANY_CHARACTER",c=>{var unit=c.Game.Unit(c.Target);bool frozen=c.Target.Hero?c.Game.Players[c.Target.Seat].Frozen:unit.Frozen;if(frozen)Hit(c,4);else c.Game.Freeze(c.Target);});
   Register("CS2_022","MINION",c=>c.Game.Transform(c.Target,"VAN_CS2_tk1"));
@@ -40,6 +41,7 @@ public sealed class MatchRules {
   Register("CS2_074","NONE",c=>c.Game.Players[c.Seat].WeaponAttack+=2,(g,s)=>g.Players[s].WeaponDurability==0?"需要先装备武器。":null);Register("EX1_278","ANY_CHARACTER",c=>{Hit(c,1);c.Game.Draw(c.Seat,1);});Register("EX1_129","NONE",c=>{Area(c,1-c.Seat,1,false);c.Game.Draw(c.Seat,1);});
   Register("CS2_084","MINION",c=>c.Game.SetHealth(c.Target,1));Register("EX1_539","ANY_CHARACTER",c=>Hit(c,c.Game.Players[c.Seat].Board.Any(m=>m.Race=="BEAST")?5:3));Register("EX1_617","NONE",c=>{var target=c.Game.RandomTarget(c.Game.Characters(1-c.Seat,false));if(target!=null)c.Game.Unit(target).DamageTaken=c.Game.Unit(target).MaxHealth;},(g,s)=>g.Players[1-s].Board.Count==0?"对方没有随从。":null);
   Register("NEW1_031","NONE",c=>{var token=c.Game.RandomTarget(new[]{new MatchTarget(0),new MatchTarget(1),new MatchTarget(2)});c.Game.Summon(c.Seat,new[]{"VAN_NEW1_032","VAN_NEW1_033","VAN_NEW1_034"}[token.Seat]);},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
+  Register("CS2_237","NONE",HunterRules.Apply);Register("DS1_070","FRIENDLY_BEAST",HunterRules.Apply);Register("DS1_183","NONE",HunterRules.Apply,(g,s)=>HunterRules.Requirement(g,s,"DS1_183"));Register("DS1_184","NONE",HunterRules.Apply);Register("DS1_188","NONE",HunterRules.Apply);Register("EX1_531","NONE",HunterRules.Apply);Register("EX1_536","NONE",HunterRules.Apply);Register("EX1_537","ENEMY_MINION",HunterRules.Apply);Register("EX1_538","NONE",HunterRules.Apply);Register("EX1_544","NONE",HunterRules.Apply);Register("EX1_549","FRIENDLY_BEAST",HunterRules.Apply);
   Register("CS2_087","MINION",c=>c.Game.Buff(c.Target,3,0));Register("CS2_092","MINION",c=>c.Game.Buff(c.Target,4,4));Register("EX1_371","MINION",c=>c.Game.Unit(c.Target).Shield=true);Register("CS2_093","NONE",c=>Area(c,1-c.Seat,2,true));Register("CS2_094","ANY_CHARACTER",c=>{Hit(c,3);c.Game.Draw(c.Seat,1);});Register("EX1_619","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.SetHealth(target,1);});Register("EX1_360","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack=1-unit.BaseAttack;});Register("EX1_355","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack+=c.Game.AttackValue(unit);});
   Register("DS1_233","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),5+c.Game.SpellPower(c.Seat)));Register("CS2_004","MINION",c=>{c.Game.Buff(c.Target,0,2);c.Game.Draw(c.Seat,1);});Register("CS2_234","LOW_ATTACK",Kill);Register("EX1_622","HIGH_ATTACK",Kill);Register("CS2_236","MINION",c=>c.Game.Buff(c.Target,0,c.Game.Unit(c.Target).Health));Register("CS1_129","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack=unit.Health-unit.BaseAttack;});Register("EX1_332","MINION",c=>c.Game.Silence(c.Target));
   Register("CS1_112","NONE",c=>{Area(c,1-c.Seat,2,true);foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_621","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.Heal(target,4);});Register("EX1_624","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Heal(new MatchTarget(c.Seat),5);});Register("EX1_626","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Silence(target);c.Game.Draw(c.Seat,1);});
@@ -85,7 +87,9 @@ public sealed class MatchRules {
   foreach(string id in new[]{"EX1_154","EX1_155","EX1_160","EX1_164","EX1_165","EX1_166","EX1_178","EX1_573","NEW1_007","NEW1_008"})Register(id,"NONE",ApplyChoice);
  }
  public bool IsChoice(CardRecord card){return card!=null&&Choices(card).Length==2;}
+ public bool IsChoice(CardRecord card,MatchEngine game,int seat){return card!=null&&(card.BaseId==HunterRules.TrackingCardId?HunterRules.TrackingOptions(game,seat).Length>1:Choices(card).Length==2);}
  public bool ValidChoice(CardRecord card,string key){return Choices(card).Any(option=>option.Key==key);}
+ public bool ValidChoice(CardRecord card,string key,MatchEngine game,int seat){return card!=null&&card.BaseId==HunterRules.TrackingCardId?HunterRules.IsTrackingChoiceValid(game,seat,key):ValidChoice(card,key);}
  public MatchChoiceOption[] Choices(CardRecord card){if(card==null)return new MatchChoiceOption[0];switch(card.BaseId){
   case "EX1_154":return new[]{new MatchChoiceOption("three","造成 3 点伤害","对一个随从造成 3 点伤害。"),new MatchChoiceOption("one-draw","造成 1 点伤害并抽牌","对一个随从造成 1 点伤害，然后抽一张牌。")};
   case "EX1_155":return new[]{new MatchChoiceOption("attack","攻击 +4","使一个随从获得 +4 攻击力。"),new MatchChoiceOption("health-taunt","生命 +4 和嘲讽","使一个随从获得 +4 生命值和嘲讽。")};
@@ -98,6 +102,7 @@ public sealed class MatchRules {
   case "NEW1_007":return new[]{new MatchChoiceOption("five","造成 5 点伤害","对一个随从造成 5 点伤害。"),new MatchChoiceOption("area","敌方全体 2 点伤害","对所有敌方随从造成 2 点伤害。")};
   case "NEW1_008":return new[]{new MatchChoiceOption("draw","抽 2 张牌","抽两张牌。"),new MatchChoiceOption("heal","恢复 5 点生命值","为你的英雄恢复 5 点生命值。")};
   default:return new MatchChoiceOption[0];}}
+ public MatchChoiceOption[] Choices(CardRecord card,MatchEngine game,int seat){return card!=null&&card.BaseId==HunterRules.TrackingCardId?HunterRules.TrackingOptions(game,seat):Choices(card);}
  public string Target(CardRecord card,string choice){return Target(card,choice,false);}
  public string Target(CardRecord card,string choice,bool combo){string comboTarget=ComboRules.Target(card,combo);if(comboTarget!=null)return comboTarget;if(!IsChoice(card))return Effect(card).Target;if(!ValidChoice(card,choice))return "NONE";switch(card.BaseId){case "EX1_154":case "EX1_155":case "EX1_166":return "MINION";case "NEW1_007":return choice=="area"?"NONE":"MINION";default:return "NONE";}}
  void ApplyChoice(EffectContext c){switch(c.Card.BaseId){
