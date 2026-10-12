@@ -52,3 +52,27 @@
 `MinionHealed` 提供被治疗随从和实际恢复量，过量治疗和英雄治疗不触发北郡。`Shadowform` 是明确公开状态；复制手牌由房主标记 `Generated`，保持身份私有，生成牌可在对局跨职业使用，卡组验证仍按职业。
 
 日常调用 `scripts/test.ps1 -Scope priest`（纯规则），需要联机时追加 `-Layer network`。牧师核心断言位于 `tests/PriestRuleChecks.cs`，真实 TCP 交互位于 `tests/Wpf/PriestVerification.cs`。
+
+## 法师扩展
+
+冰锥术由 `MageRules` 在施法时固定目标及邻居 ID，再冻结并结算同批伤害。安东尼达斯和法力浮龙复用 `SpellCast`，生成火球只由房主写入私有手牌。肯瑞托的 `FreeSecretThisTurn` 是公开的本回合费用状态，`TimedCostRules` 应用与到期清理，成功使用奥秘后消费；静态卡牌费用不修改。
+
+使用 `scripts/test.ps1 -Scope mage` 检查法师规则，追加 `-Layer network` 检查双端权威结算与手牌隐私。
+
+## 圣骑士与萨满扩展
+
+`PaladinRules.Summoned` 处理公正之剑的加成与耐久，`Summon` 的召唤事件开关使变形不重复触发入场效果。变形保留攻击使用、入场回合及临时控制返还信息，其他附加效果清除。`ShamanRules` 处理战吼、视界术实例减费、图腾之力与妖术；无羁元素注册公共 `CardPlayed` 过载条件。
+
+先祖之魂和丛林之魂在 `EnchantmentCollection` 中各次授予分别记录，由公共 `DeathrattleRules` 按授予顺序在死亡位置结算。先祖之魂召唤基础复制，不重复战吼且不继承旧附加亡语；新复制仍经过真实召唤接口。沉默清除旧授予，后续新授予仍有效。
+
+纯规则使用 `scripts/test.ps1 -Scope "paladin,shaman"`，实际 TCP 交互使用 `-Scope paladin-shaman -Layer network`。
+
+## 英雄替换与技能注册
+
+`HeroReplacementRules.RegisterHero` 注册 `HeroReplacementDefinition`（稳定 ID、名称、生命策略、护甲策略、种族及技能 ID）；`RegisterAbility` 注册 `HeroAbilityDefinition`（费用、目标、要求和结算）。替换战吼的扩展效果 ID 可用 `RegisterReplacementMinion` 登记，以免替换前重复触发普通随从入场反应。`ReplaceHero` 只改英雄状态，不修改手牌、牌库、卡组职业或法力，武器由效果独立装备。
+
+`HeroFormId` 与 `HeroAbilityId` 独立；替换英雄可刷新技能，后续暗影形态可替换技能而保留英雄形态。普通职业技能仍沿用现有默认入口，已注册技能使用同一选择目标与原子校验流程，界面按实际技能费用和名称显示。`HeroHealthLimit` 统一治疗上限，`HeroDestroyed` 区分直接消灭与普通受伤，阻止治疗复活已消灭的英雄。
+
+英雄字段使用 `PublicPlayerState` 白名单同步，快照拒绝未注册的替换定义。大王特效采用 `hero-speech` 公开事件，锚定英雄气泡，受普通模式及特效开关约束并去重；不解析日志，不修改真实用户设置。
+
+纯规则用 `scripts/test.ps1 -Scope heroes`，双端与特效开关交互用 `-Scope heroes -Layer network`。

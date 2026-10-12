@@ -3,15 +3,15 @@ $ErrorActionPreference='Stop'
 $Scope=$Scope -replace '\s+',','
 $taskRoot=Split-Path -Parent $PSScriptRoot
 $testRoot=Join-Path $taskRoot 'work/test-bin'
-$ruleNames=@('priest','opening','shadowstep','warlock','druid-spells','triggers','engine','library','modes','enchantments','privacy','resolution','warrior','secrets','rogue','deathrattle','combo','overload')
-$wpfNames=@('priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets')
+$ruleNames=@('heroes','paladin','shaman','mage','priest','opening','shadowstep','warlock','druid-spells','triggers','engine','library','modes','enchantments','privacy','resolution','warrior','secrets','rogue','deathrattle','combo','overload')
+$wpfNames=@('heroes','paladin-shaman','mage','priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets')
 if($Scope -eq 'auto'){
  $paths=@(git -C $taskRoot diff --name-only HEAD)+@(git -C $taskRoot ls-files --others --exclude-standard)
  $selected=@();$selectedWpf=@()
  foreach($path in $paths){
   if($path -notmatch '^(src/|tests/|data/|scripts/test.ps1|build.ps1)'){continue}
   $mapped=$false
-  foreach($name in @('priest','warrior','secrets','rogue','deathrattle','combo','overload','warlock','druid-spells','triggers')){if($path -match "(?i)$($name -replace '-spells$','' -replace 's$','')"){$selected+=$name;$selectedWpf+=$name;$mapped=$true}}
+  foreach($name in @('heroes','paladin','shaman','mage','priest','warrior','secrets','rogue','deathrattle','combo','overload','warlock','druid-spells','triggers')){if($path -match "(?i)$($name -replace '-spells$','' -replace 's$','')"){$selected+=$name;$selectedWpf+=if($name -in @('paladin','shaman')){'paladin-shaman'}else{$name};$mapped=$true}}
   if(!$mapped){$selected+=$ruleNames;$selectedWpf+='full'}
  }
  if($selected.Count -eq 0){$selected=@('engine','library')}
@@ -27,11 +27,11 @@ if($Layer -eq 'rules' -or $Layer -eq 'all'){
  $rules=if($Layer -eq 'all'){'all'}else{$selected -join ','}
  foreach($name in $rules.Split(',')){if($name -ne 'all' -and $name -notin $ruleNames){throw "Unknown rules module: $name"}}
  $ruleExe=Join-Path $testRoot 'Touchfish.RuleTests.exe'
- if($true){$sources=Get-Content (Join-Path $taskRoot 'tests/core-sources.json') -Raw|ConvertFrom-Json;$argsList=@('/nologo','/target:exe','/optimize+',('/out:'+$ruleExe),'/reference:System.Web.Extensions.dll')+@($sources|ForEach-Object {Join-Path $taskRoot ('src/'+$_)})+@(Join-Path $taskRoot 'tests/RuleTests.cs')+@(Join-Path $taskRoot 'tests/LegacyRuleChecks.cs')+@(Join-Path $taskRoot 'tests/PriestRuleChecks.cs');& $compiler @argsList;if($LASTEXITCODE -ne 0){throw 'Rules test build failed'}}
+ if($true){$sources=Get-Content (Join-Path $taskRoot 'tests/core-sources.json') -Raw|ConvertFrom-Json;$argsList=@('/nologo','/target:exe','/optimize+',('/out:'+$ruleExe),'/reference:System.Web.Extensions.dll')+@($sources|ForEach-Object {Join-Path $taskRoot ('src/'+$_)})+@(Join-Path $taskRoot 'tests/RuleTests.cs')+@(Join-Path $taskRoot 'tests/LegacyRuleChecks.cs')+@(Join-Path $taskRoot 'tests/PriestRuleChecks.cs')+@(Join-Path $taskRoot 'tests/MageRuleChecks.cs')+@(Join-Path $taskRoot 'tests/PaladinShamanRuleChecks.cs')+@(Join-Path $taskRoot 'tests/HeroReplacementRuleChecks.cs');& $compiler @argsList;if($LASTEXITCODE -ne 0){throw 'Rules test build failed'}}
  & $ruleExe $taskRoot $rules;if($LASTEXITCODE -ne 0){throw 'Rules checks failed'}
 }
 if($Layer -ne 'rules'){
- if($Layer -eq 'all'){$selected=@('full','priest','warrior','secrets','rogue')}
+ if($Layer -eq 'all'){$selected=@('full','heroes','paladin-shaman','mage','priest','warrior','secrets','rogue')}
  foreach($name in $selected){if($name -notin $wpfNames){throw "Unknown WPF module: $name"}}
  if($true){& (Join-Path $taskRoot 'build.ps1') -OutputName 'work/test-bin/Touchfish.Tests.exe' -Verification;Copy-Item -LiteralPath (Join-Path $taskRoot 'data') -Destination $testRoot -Recurse -Force}
  $oldNetwork=$env:TOUCHFISH_VERIFY_NETWORK;$oldVisual=$env:TOUCHFISH_VERIFY_VISUAL

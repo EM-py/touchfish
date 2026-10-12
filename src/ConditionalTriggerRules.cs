@@ -13,6 +13,9 @@ public sealed class ConditionalTrigger {
 }
 public static class ConditionalTriggerRules {
  static readonly ConditionalTrigger[] rules={
+  new ConditionalTrigger{CardId="EX1_258",Timing=MatchTriggerTiming.CardPlayed,Condition=c=>c.Source.Owner==c.Seat&&c.Card!=null&&c.Card.Overload>0,Apply=c=>c.Game.Buff(new MatchTarget(c.Source.Owner,c.Source.Id),1,1)},
+  new ConditionalTrigger{CardId="NEW1_012",Timing=MatchTriggerTiming.SpellCast,Condition=c=>c.Source.Owner==c.Seat,Apply=c=>c.Game.Buff(new MatchTarget(c.Source.Owner,c.Source.Id),1,0)},
+  new ConditionalTrigger{CardId="EX1_559",Timing=MatchTriggerTiming.SpellCast,Condition=c=>c.Source.Owner==c.Seat,Apply=c=>c.Game.GenerateMageFireball(c.Source.Owner)},
   new ConditionalTrigger{CardId="CS2_235",Timing=MatchTriggerTiming.MinionHealed,Condition=c=>true,Apply=c=>c.Game.Draw(c.Source.Owner,1)},
   new ConditionalTrigger{CardId="EX1_341",Timing=MatchTriggerTiming.TurnStart,Condition=c=>c.Source.Owner==c.Seat,Apply=PriestRules.Lightwell},
   new ConditionalTrigger{CardId="EX1_402",Timing=MatchTriggerTiming.MinionDamaged,Condition=c=>c.Source.Owner==c.Damaged.Owner,Apply=c=>c.Game.Players[c.Source.Owner].Armor++},
@@ -24,7 +27,7 @@ public static class ConditionalTriggerRules {
  };
  public static void MinionDamaged(MatchEngine game,BattleUnit damaged,int amount,BattleUnit[] listeners){foreach(var source in listeners){if(source.Silenced||!game.Players[source.Owner].Board.Contains(source))continue;foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==MatchTriggerTiming.MinionDamaged&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){var context=new MatchTriggerContext{Game=game,Seat=damaged.Owner,Source=source,Damaged=damaged,Amount=amount};if(rule.Condition(context))rule.Apply(context);}}}
  public static ConditionalTrigger[] Definitions{get{return rules.Concat(TurnEndRules.TriggerIds.Select(id=>new ConditionalTrigger{CardId=id,Timing=MatchTriggerTiming.TurnEnd,Condition=c=>(c.Source.Owner==c.Seat||id=="NEW1_038"||id=="EX1_tk9b")&&(id!="EX1_274"||c.Game.Players[c.Source.Owner].SecretCount>0),Apply=c=>c.Game.ApplyTurnEndTrigger(c.Source)})).Concat(DeathrattleRules.CardIds.Select(id=>new ConditionalTrigger{CardId=id,Timing=MatchTriggerTiming.SourceDied,Condition=c=>true,Apply=c=>DeathrattleRules.Resolve(c.Game,c.Source)})).ToArray();}}
- public static void SourceDied(MatchEngine game,BattleUnit source){bool native=DeathrattleRules.CardIds.Contains(game.Card(source.CardId).BaseId);foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==MatchTriggerTiming.SourceDied&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){var context=new MatchTriggerContext{Game=game,Seat=source.Owner,Source=source};if(rule.Condition(context))rule.Apply(context);}if(!native&&source.ForestDeathrattles>0)DeathrattleRules.Resolve(game,source);}
+ public static void SourceDied(MatchEngine game,BattleUnit source){bool native=DeathrattleRules.CardIds.Contains(game.Card(source.CardId).BaseId);foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==MatchTriggerTiming.SourceDied&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){var context=new MatchTriggerContext{Game=game,Seat=source.Owner,Source=source};if(rule.Condition(context))rule.Apply(context);}if(!native&&(source.ForestDeathrattles>0||source.AncestralSpirits>0))DeathrattleRules.Resolve(game,source);}
  public static string[] CardIds{get{return rules.Select(r=>r.CardId).Distinct().ToArray();}}
  public static void Resolve(MatchEngine game,MatchTriggerTiming timing,int seat,CardRecord card=null,BattleUnit healed=null,int amount=0){
   var queue=(timing==MatchTriggerTiming.TurnEnd?game.Players[seat].Board.OrderBy(u=>u.Id).Concat(game.Players[1-seat].Board.OrderBy(u=>u.Id)):game.Players.SelectMany(p=>p.Board).OrderBy(u=>u.Id)).ToArray();
@@ -41,8 +44,8 @@ public static class TurnStartRules {
 }
 public static class TimedCostRules {
  public static void GrantFreeSpells(MatchEngine game,int seat,int throughTurn){game.Players[seat].FreeSpellsUntilTurn=Math.Max(game.Players[seat].FreeSpellsUntilTurn,throughTurn);}
- public static int Apply(MatchEngine game,int seat,CardRecord card,int cost){if(card.Type=="SPELL")cost=Math.Max(0,cost-game.Players[seat].PreparationDiscount);return card.Type=="SPELL"&&game.Players[seat].FreeSpellsUntilTurn>=game.Turn?0:cost;}
- public static void Expire(MatchEngine game){foreach(var player in game.Players){player.PreparationDiscount=0;if(player.FreeSpellsUntilTurn<=game.Turn)player.FreeSpellsUntilTurn=-1;}}
+ public static int Apply(MatchEngine game,int seat,CardRecord card,int cost){if(card.Type=="SPELL"&&MatchEngine.Has(card,"SECRET")&&game.Players[seat].FreeSecretThisTurn)return 0;if(card.Type=="SPELL")cost=Math.Max(0,cost-game.Players[seat].PreparationDiscount);return card.Type=="SPELL"&&game.Players[seat].FreeSpellsUntilTurn>=game.Turn?0:cost;}
+ public static void Expire(MatchEngine game){foreach(var player in game.Players){player.PreparationDiscount=0;player.FreeSecretThisTurn=false;if(player.FreeSpellsUntilTurn<=game.Turn)player.FreeSpellsUntilTurn=-1;}}
 }
 public sealed partial class MatchEngine {
  internal bool TriggerCoinFlip(){return random.Next(2)==0;}
