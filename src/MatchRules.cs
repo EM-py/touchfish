@@ -100,6 +100,8 @@ public sealed class MatchRules {
   Register("CS2_088","NONE",PaladinRules.Apply);Register("EX1_366","NONE",c=>{});
   Register("CS2_038","MINION",ShamanRules.Apply);Register("CS2_042","ANY_CHARACTER",ShamanRules.Apply);Register("CS2_053","NONE",ShamanRules.Apply);Register("EX1_244","NONE",ShamanRules.Apply);Register("EX1_246","MINION",ShamanRules.Apply);Register("EX1_587","FRIENDLY_MINION",ShamanRules.Apply);
   Register("EX1_323","NONE",HeroReplacementRules.Jaraxxus);
+    Register("CS2_237","NONE",HunterRules.Apply);Register("DS1_070","FRIENDLY_BEAST",HunterRules.Apply);Register("DS1_183","NONE",HunterRules.Apply,(g,s)=>HunterRules.Requirement(g,s,"DS1_183"));Register("DS1_184","NONE",HunterRules.Apply);Register("DS1_188","NONE",HunterRules.Apply);Register("EX1_531","NONE",HunterRules.Apply);Register("EX1_536","NONE",HunterRules.Apply);Register("EX1_537","ENEMY_MINION",HunterRules.Apply);Register("EX1_538","NONE",HunterRules.Apply);Register("EX1_544","NONE",HunterRules.Apply);Register("EX1_549","FRIENDLY_BEAST",HunterRules.Apply);
+  foreach(var trigger in HunterRules.Triggers)RegisterTrigger(trigger);
   foreach(var trigger in LowCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in LowCostRules.Triggers.Select(t=>t.CardId).Distinct())Register(id,"NONE",c=>{});
   Register("CS2_146","NONE",c=>{});Register("EX1_049","FRIENDLY_MINION",LowCostRules.Apply);Register("EX1_059","MINION",LowCostRules.Apply);
   foreach(string id in new[]{"EX1_082","NEW1_016","NEW1_018","NEW1_025"})Register(id,"NONE",LowCostRules.Apply);
@@ -107,6 +109,9 @@ public sealed class MatchRules {
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}
  public void RegisterExtension(string effectId,string target,Action<EffectContext> apply,Func<MatchEngine,int,string> requirement=null){if(String.IsNullOrWhiteSpace(effectId)||!effectId.Contains(":" )||apply==null||effects.ContainsKey(effectId))throw new ArgumentException("扩展效果必须使用独立命名空间和版本，不能覆盖现有效果。");Register(effectId,target,apply,requirement);}
+ public bool IsChoice(CardRecord card,MatchEngine game,int seat){return card!=null&&(card.BaseId==HunterRules.TrackingCardId?HunterRules.TrackingOptions(game,seat).Length>1:IsChoice(card));}
+ public bool ValidChoice(CardRecord card,string key,MatchEngine game,int seat){return card!=null&&card.BaseId==HunterRules.TrackingCardId?HunterRules.IsTrackingChoiceValid(game,seat,key):ValidChoice(card,key);}
+ public MatchChoiceOption[] Choices(CardRecord card,MatchEngine game,int seat){return card!=null&&card.BaseId==HunterRules.TrackingCardId?HunterRules.TrackingOptions(game,seat):Choices(card);}
  public bool IsChoice(CardRecord card){return card!=null&&Choices(card).Length==2;}
  public bool ValidChoice(CardRecord card,string key){return Choices(card).Any(option=>option.Key==key);}
  public MatchChoiceOption[] Choices(CardRecord card){if(card==null)return new MatchChoiceOption[0];switch(card.BaseId){

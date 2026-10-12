@@ -7,7 +7,7 @@ using System.Windows.Controls;
 namespace Touchfish {
 public static class AppRelease {
  public const string Version="v0.5.3",Date="2026-10-12";
- public static readonly string[] PatchNotes={"v0.5.3 本地开发版，尚未发布。","补齐 12 张中立 1 / 2 费牌，总支持 340 / 382；猎人职业牌由另一位开发者负责，本批不修改。","新增角色治疗、召唤后与施法后公共触发，包含飞刀、炎术师、圣光护卫者、魔瘾者等；战吼和触发按阶段结算。"};
+ public static readonly string[] PatchNotes={"补齐 12 张中立 1 / 2 费牌，兼容合并猎人职业牌，总支持 351 / 382。","猎人经典 25 / 25 可用：追踪术私下选牌、野兽召唤与死亡、武器和法术效果；保留当前奥秘与扩展接口。","新增角色治疗、召唤后与施法后公共触发，包含飞刀、炎术师、圣光护卫者、魔瘾者等；战吼和触发按阶段结算。","狂野怒火攻击与免疫在回合结束失效；追踪候选只给本人，不泄露到共享记录。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
