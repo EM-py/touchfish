@@ -33,5 +33,6 @@
   "MageRules.cs",
   "PaladinRules.cs",
   "ShamanRules.cs",
-  "HeroReplacementRules.cs"
+  "HeroReplacementRules.cs",
+  "LowCostRules.cs"
 ]

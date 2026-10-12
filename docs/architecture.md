@@ -76,3 +76,11 @@
 英雄字段使用 `PublicPlayerState` 白名单同步，快照拒绝未注册的替换定义。大王特效采用 `hero-speech` 公开事件，锚定英雄气泡，受普通模式及特效开关约束并去重；不解析日志，不修改真实用户设置。
 
 纯规则用 `scripts/test.ps1 -Scope heroes`，双端与特效开关交互用 `-Scope heroes -Layer network`。
+
+## 中立低费牌与触发阶段
+
+`LowCostRules` 独立注册本批 12 张中立牌的效果和监听器，不实现猎人职业牌。`CharacterHealed` 给出目标与实际恢复量，英雄和随从均可触发，过量治疗不触发；保留北郡的 `MinionHealed` 时机。
+
+`MinionSummoned` 在普通打牌时延迟到战吼之后，监听者在召唤时快照，新增随从不响应自身召唤，战吼回手的监听者不再触发。战吼子召唤按 FIFO 排队；法术、技能和亡语产生的真实召唤同样走接口，变形不走。此公共接口可供后续职业模块登记召唤监听器，本轮不加入猎人效果。
+
+`SpellCast` 表示已成功支付的施法，反制前仍可响应；`SpellResolved` 是未被反制且效果已完成后的时机，炎术师使用后者。临时攻击沿用回合末清理，海盗匹配抽牌保持牌库剩余顺序且只公开数量。检查使用 `scripts/test.ps1 -Scope low-cost`，需要实际双端则追加 `-Layer network`。

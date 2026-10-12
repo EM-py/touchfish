@@ -100,6 +100,9 @@ public sealed class MatchRules {
   Register("CS2_088","NONE",PaladinRules.Apply);Register("EX1_366","NONE",c=>{});
   Register("CS2_038","MINION",ShamanRules.Apply);Register("CS2_042","ANY_CHARACTER",ShamanRules.Apply);Register("CS2_053","NONE",ShamanRules.Apply);Register("EX1_244","NONE",ShamanRules.Apply);Register("EX1_246","MINION",ShamanRules.Apply);Register("EX1_587","FRIENDLY_MINION",ShamanRules.Apply);
   Register("EX1_323","NONE",HeroReplacementRules.Jaraxxus);
+  foreach(var trigger in LowCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in LowCostRules.Triggers.Select(t=>t.CardId).Distinct())Register(id,"NONE",c=>{});
+  Register("CS2_146","NONE",c=>{});Register("EX1_049","FRIENDLY_MINION",LowCostRules.Apply);Register("EX1_059","MINION",LowCostRules.Apply);
+  foreach(string id in new[]{"EX1_082","NEW1_016","NEW1_018","NEW1_025"})Register(id,"NONE",LowCostRules.Apply);
   RuleModules.Configure(this);
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}

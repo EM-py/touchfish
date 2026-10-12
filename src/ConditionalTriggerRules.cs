@@ -2,9 +2,9 @@
 using System.Linq;
 
 namespace Touchfish {
-public enum MatchTriggerTiming { CardPlayed, SpellCast, TurnStart, MinionDamaged, TurnEnd, SourceDied, MinionHealed }
+public enum MatchTriggerTiming { CardPlayed, SpellCast, TurnStart, MinionDamaged, TurnEnd, SourceDied, MinionHealed, CharacterHealed, MinionSummoned, SpellResolved }
 public sealed class MatchTriggerContext {
- public MatchEngine Game;public int Seat,Amount;public CardRecord Card;public BattleUnit Source,Damaged,Healed;
+ public MatchEngine Game;public int Seat,Amount;public CardRecord Card;public BattleUnit Source,Damaged,Healed,Summoned;public MatchTarget HealedTarget;
 }
 // Conditions and effects are separate; new conditional cards register their timing here.
 public sealed class ConditionalTrigger {
@@ -29,11 +29,11 @@ public static class ConditionalTriggerRules {
  public static ConditionalTrigger[] Definitions{get{return rules.Concat(TurnEndRules.TriggerIds.Select(id=>new ConditionalTrigger{CardId=id,Timing=MatchTriggerTiming.TurnEnd,Condition=c=>(c.Source.Owner==c.Seat||id=="NEW1_038"||id=="EX1_tk9b")&&(id!="EX1_274"||c.Game.Players[c.Source.Owner].SecretCount>0),Apply=c=>c.Game.ApplyTurnEndTrigger(c.Source)})).Concat(DeathrattleRules.CardIds.Select(id=>new ConditionalTrigger{CardId=id,Timing=MatchTriggerTiming.SourceDied,Condition=c=>true,Apply=c=>DeathrattleRules.Resolve(c.Game,c.Source)})).ToArray();}}
  public static void SourceDied(MatchEngine game,BattleUnit source){bool native=DeathrattleRules.CardIds.Contains(game.Card(source.CardId).BaseId);foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==MatchTriggerTiming.SourceDied&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){var context=new MatchTriggerContext{Game=game,Seat=source.Owner,Source=source};if(rule.Condition(context))rule.Apply(context);}if(!native&&(source.ForestDeathrattles>0||source.AncestralSpirits>0))DeathrattleRules.Resolve(game,source);}
  public static string[] CardIds{get{return rules.Select(r=>r.CardId).Distinct().ToArray();}}
- public static void Resolve(MatchEngine game,MatchTriggerTiming timing,int seat,CardRecord card=null,BattleUnit healed=null,int amount=0){
-  var queue=(timing==MatchTriggerTiming.TurnEnd?game.Players[seat].Board.OrderBy(u=>u.Id).Concat(game.Players[1-seat].Board.OrderBy(u=>u.Id)):game.Players.SelectMany(p=>p.Board).OrderBy(u=>u.Id)).ToArray();
+ public static void Resolve(MatchEngine game,MatchTriggerTiming timing,int seat,CardRecord card=null,BattleUnit healed=null,int amount=0,BattleUnit summoned=null,MatchTarget healedTarget=null,BattleUnit[] listeners=null){
+  var queue=listeners??(timing==MatchTriggerTiming.TurnEnd?game.Players[seat].Board.OrderBy(u=>u.Id).Concat(game.Players[1-seat].Board.OrderBy(u=>u.Id)):game.Players.SelectMany(p=>p.Board).OrderBy(u=>u.Id)).ToArray();
   foreach(var source in queue){if(game.Finished)break;if(source.Silenced||source.Health<=0||!game.Players[source.Owner].Board.Contains(source))continue;
    foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==timing&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){
-    var context=new MatchTriggerContext{Game=game,Seat=seat,Card=card,Source=source,Healed=healed,Amount=amount};if(!rule.Condition(context))continue;
+    var context=new MatchTriggerContext{Game=game,Seat=seat,Card=card,Source=source,Healed=healed,Amount=amount,Summoned=summoned,HealedTarget=healedTarget};if(!rule.Condition(context))continue;
     game.Log.Add("玩家 "+(source.Owner+1)+" · 触发："+game.Card(source.CardId).Name);rule.Apply(context);game.Cleanup();if(game.Finished)break;
    }
   }
