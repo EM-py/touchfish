@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Web.Script.Serialization;
 
 namespace Touchfish {
 public sealed class CardRecord {
- public string Id,BaseId,Name,Text,RawText,CardClass,Type,Rarity,SetId,Race;
+ public string EffectId;public string Id,BaseId,Name,Text,RawText,CardClass,Type,Rarity,SetId,Race;
  public int DbfId,LegacyDbfId,Cost,Attack,Health,Durability,Overload,SpellDamage;
  public bool Collectible;public string[] Mechanics,Entourage;
 }
