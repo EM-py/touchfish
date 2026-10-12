@@ -5,7 +5,7 @@ namespace Touchfish {
 public static class WarriorRules {
  public static void Apply(EffectContext c){var g=c.Game;var p=g.Players[c.Seat];switch(c.Card.BaseId){
   case "CS2_104":g.Buff(c.Target,3,3);break;
-  case "CS2_114":var targets=g.Characters(1-c.Seat,false).ToList();var first=g.RandomTarget(targets);targets.Remove(first);var second=g.RandomTarget(targets);int damage=2+g.SpellPower(c.Seat);g.Damage(first,damage);g.Damage(second,damage);break;
+  case "CS2_114":var targets=g.Characters(1-c.Seat,false).ToList();var first=g.RandomTarget(targets);targets.Remove(first);var second=g.RandomTarget(targets);int damage=g.SpellDamageAmount(c.Seat,2);g.Damage(first,damage);g.Damage(second,damage);break;
   case "EX1_392":g.Draw(c.Seat,(p.Health<g.Mode.StartingHealth?1:0)+p.Board.Count(u=>u.Health>0&&u.DamageTaken>0));break;
   case "EX1_398":g.EquipRaw(c.Seat,"GAME_BATTLE_AXE",2,2,false);break;
   case "EX1_407":var units=g.Players.SelectMany(player=>player.Board).ToArray();var survivor=g.RandomTarget(units.Select(u=>new MatchTarget(u.Owner,u.Id)));foreach(var u in units)if(u.Id!=survivor.UnitId)u.DamageTaken=u.MaxHealth;break;

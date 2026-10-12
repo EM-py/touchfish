@@ -8,11 +8,11 @@ public static class ComboRules {
  public static string Target(CardRecord card,bool combo){if(card.BaseId=="EX1_134")return combo?"ANY_CHARACTER":"NONE";if(card.BaseId=="NEW1_005")return combo?"MINION":"NONE";return null;}
  public static void Apply(EffectContext c){var g=c.Game;switch(c.Card.BaseId){
   case "CS2_073":g.Buff(c.Target,c.Combo?4:2,0);break;
-  case "EX1_124":g.Damage(c.Target,(c.Combo?4:2)+g.SpellPower(c.Seat));break;
+  case "EX1_124":g.Damage(c.Target,g.SpellDamageAmount(c.Seat,(c.Combo?4:2)));break;
   case "EX1_131":if(c.Combo)g.Summon(c.Seat,"GAME_DEFIAS_BANDIT",g.Players[c.Seat].Board.IndexOf(c.Summoned)+1);break;
   case "EX1_133":g.Damage(c.Target,c.Combo?2:1);break;
   case "EX1_134":if(c.Combo)g.Damage(c.Target,2);break;
-  case "EX1_137":g.Damage(new MatchTarget(1-c.Seat),2+g.SpellPower(c.Seat));if(c.Combo)g.ScheduleComboReturn(c.Seat,c.PlayedHand);break;
+  case "EX1_137":g.Damage(new MatchTarget(1-c.Seat),g.SpellDamageAmount(c.Seat,2));if(c.Combo)g.ScheduleComboReturn(c.Seat,c.PlayedHand);break;
   case "EX1_613":if(c.Combo)g.Buff(new MatchTarget(c.Seat,c.Summoned.Id),2*c.PreviousCardsPlayed,2*c.PreviousCardsPlayed);if(c.Combo&&2+2*c.PreviousCardsPlayed>=12)g.EdwinEntrance(c.Summoned);break;
   case "NEW1_005":if(c.Combo)g.ReturnToHand(c.Target);break;
  }}
