@@ -75,3 +75,8 @@
 - 本地经典 15 张奥秘全部接入，支持 302 / 382，仍未授权本批 Git 提交上传。SecretRules 保存房主私有奥秘实例，公开快照只发数量；挂出日志/视觉事件匿名且禁用完整卡牌展示，触发公开牌名并按挂出顺序结算，每方五张上限、同名不重复、只在对方回合触发。英雄面板每张显示一个中性问号（极简也是状态标记，不播放特效）。寒冰屏障免疫持续本回合；冰冻陷阱加费绑定手牌实例，满手牌使用既有销毁与亡语规则；救赎按死亡位置恢复基础随从至一血。
 
 - 用户已授权将战士全职业牌与经典 15 张奥秘正式发布 v0.4.7，支持 302 / 382；本批发布后清理本方分支，后续提交另获授权。架构评估仅为评估，未做重构。
+
+- 当前 codex/extensibility 为本地重构，保持正式版本号 v0.4.7，未授权本批提交上传。测试已迁至 tests/Wpf，正式 src 不包含验证代码；日常使用 scripts/test.ps1（默认按 Git 改动选纯规则模块，不启动 WPF/TCP），指定 -Scope secrets 等单模块。联机 / 界面使用 -Layer network / ui，发布使用 -Scope full -Layer all；正式 Touchfish.exe --preview previews 只做 WPF 外观预览。禁止以纯规则检查替代发布完整回归。运行目录仍仅两 EXE，测试程序位于 work/test-bin。
+- 核心通过 tests/core-sources.json 明确选入纯规则测试编译，不依赖 WPF。模式定义 GameModes、附加效果 EnchantmentCollection、FIFO ResolutionQueue、模块注册 RuleModules、公开白名单 PublicPlayerState 及协议 2 的已确认日志增量均已接入；新增数据字段不得通过反射自动暴露，新增随从附加效果通过集合与显式复制处理。经典仍为两人七槽，不新增模式界面或公网服务。
+
+- 用户已明确授权本批扩展接口与按需测试重构发布 v0.5.0；支持仍为 302 / 382，协议 2，发布前跑 scripts/test.ps1 -Scope full -Layer all 与正式 WPF 外观预览。发布后清理本方分支，后续提交上传另获授权。

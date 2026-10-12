@@ -29,7 +29,7 @@ public partial class PanelWindow : Window {
  Border detailBorder; Button compactButton, detailButton, pinButton, gameTab, logTab;
  bool fullEffects;CheckBox fullEffectsOption;
  Grid logPanel; bool fullBoard=true, details=false, log=false; Entry selected;
- List<Border> rows=new List<Border>(); int checks;
+ List<Border> rows=new List<Border>();
  List<FrameworkElement> heroSlots=new List<FrameworkElement>(); List<Polygon> crystals=new List<Polygon>(); List<ScrollViewer> lanes=new List<ScrollViewer>();
  List<Grid> battleLanes=new List<Grid>(); List<Border> battleCards=new List<Border>(); FrameworkElement handLane;
  List<Grid> heroLayouts=new List<Grid>(); Grid settingsPanel; Button settingsTab, wpsOption, codexOption, lightOption, darkOption, normalOption, minimalOption;
@@ -231,38 +231,26 @@ public partial class PanelWindow : Window {
  public void ShowCodexMinimal(){ApplyTheme(true,true);ApplyMode(true);}
  
  public void Render(string path){
+#if VERIFY
+  if(!VerificationRun.Visual)return;
+#endif
   UpdateLayout(); var target=new RenderTargetBitmap((int)ActualWidth,(int)ActualHeight,96,96,PixelFormats.Pbgra32);target.Render(this);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(target));using(var file=File.Create(path))encoder.Save(file);
  }
- public void PreviewSuite(string folder){
-  previewRun=true;ApplyTheme(false,false);ApplyMode(false);ShowPage("game");if(details)ToggleDetails();Directory.CreateDirectory(folder);Render(Path.Combine(folder,"01-standard.png"));Render(Path.Combine(folder,"03-compact.png"));
-  Check(Width==548&&Height==474&&!details,"Default compact size");Check(battleCards.Count==14,"Seven minions per side");
-  foreach(var card in battleCards){var bounds=card.TransformToAncestor(main).TransformBounds(new Rect(0,0,card.ActualWidth,card.ActualHeight));Check(bounds.Left>=-1&&bounds.Right<=main.ActualWidth+1,"Battle card fits width");var label=(StackPanel)((Grid)card.Child).Children[1];var name=(TextBlock)label.Children[0];Check(name.TextWrapping==TextWrapping.Wrap,"Name wraps");Check(label.DesiredSize.Height<=53,"Name and keywords fit vertically");}
-  Select((Entry)battleCards[3].Tag);UpdateLayout();Render(Path.Combine(folder,"02-details.png"));Render(Path.Combine(folder,"04-compact-details.png"));Check(Height==474&&Width==548,"Inspection preserves size");Check(handLane.Visibility==Visibility.Collapsed,"Inspector replaces hand area");
-  foreach(var row in rows){Select((Entry)row.Tag);Check(detailTitle.Text==((Entry)row.Tag).Name,"Selection");}
-  ToggleDetails();Check(handLane.Visibility==Visibility.Visible,"Hand restored");ToggleBoard();UpdateLayout();Render(Path.Combine(folder,"06-three-minions.png"));Check(battleCards.Count==6,"Three minions with reserved slots");ToggleBoard();
-  SwitchTab(true);UpdateLayout();Render(Path.Combine(folder,"05-log.png"));SwitchTab(false);Check(main.Visibility==Visibility.Visible,"Tab restoration");
-  Check(heroSlots.Count==6&&crystals.Count==20,"Hero and mana slots");Check(Grid.GetRow(battleLanes[0])==2&&Grid.GetRow(battleLanes[1])==4,"Battlefield order");CheckNormalWeights(this);
-  ApplyTheme(true,false);Render(Path.Combine(folder,"08-codex-normal-light.png"));Check(!dark&&codex,"Codex light theme");
-  ApplyTheme(true,true);Render(Path.Combine(folder,"09-codex-normal-dark.png"));Check(dark&&codex,"Codex dark theme");
-  ApplyMode(true);Render(Path.Combine(folder,"10-codex-minimal-dark.png"));Check(Width==392&&Height==300,"Minimal dimensions");CheckBoardFit();foreach(var card in battleCards){var label=(StackPanel)((Grid)card.Child).Children[1];Check(((TextBlock)label.Children[0]).Text!=((Entry)card.Tag).Name,"Minimal hides names");Check(label.Children[1] is Button,"Small detail entry");}foreach(Border slot in heroSlots){var entry=(Entry)slot.Tag;Check(((TextBlock)((StackPanel)slot.Child).Children[0]).Text==(entry.Kind=="英雄"?entry.Health.ToString():entry.Kind=="武器"?"武":"技"),"Minimal hero text");}
-  ShowPage("settings");Render(Path.Combine(folder,"11-settings-dark.png"));Check(settingsPanel.Visibility==Visibility.Visible&&main.Visibility==Visibility.Collapsed,"Settings page");
-  ShowPage("game");Select((Entry)battleCards[6].Tag);Render(Path.Combine(folder,"12-codex-minimal-details.png"));Check(Width==392&&Height==300,"Minimal inspector size");if(details)ToggleDetails();
-  ApplyTheme(true,false);Render(Path.Combine(folder,"13-codex-minimal-light.png"));ApplyTheme(false,false);Render(Path.Combine(folder,"07-wps-minimal.png"));CheckBoardFit();
-  ShowPage("settings");Render(Path.Combine(folder,"14-settings-light.png"));Check(!lightOption.IsEnabled&&!darkOption.IsEnabled,"WPS appearance controls disabled");ShowPage("game");
-  ApplyMode(false);Check(Width==548&&Height==474,"Normal restoration");CheckBoardFit();CheckNormalWeights(this);
-  VerifyLibrary(folder);
-  VerifyMatch(folder);VerifyLocalTestTools(folder);
-  VerifyLan(folder);VerifyUpdates(folder);VerifyVisualEffects(folder);ApplyTheme(true,true);ApplyMode(true);OpenReleaseNotes();Render(Path.Combine(folder,"47-release-notes-codex.png"));ApplyTheme(false,false);ApplyMode(false);OpenReleaseNotes();Render(Path.Combine(folder,"48-release-notes-wps.png"));RenderExpandedRelease(folder);ShowPage("lan");
-  File.WriteAllText(Path.Combine(folder,"verification.txt"),"PASS: "+checks+" assertions. Classic collection and deckcodes; local test engine, LAN host authority and two WPF peers over real TCP; attacks, spells, powers, placement, privacy, revision rejection, disconnects; themes and layouts.\r\nActual WPF visual-tree renders at 96 DPI. Rule coverage is partial. Automated network checks use loopback sockets. User reported a working LAN session with a friend; original game client comparisons were not performed.\r\n");
- }
- void CheckBoardFit(){UpdateLayout();Check(battleCards.Count==14,"Fourteen visible minions");foreach(var card in battleCards){var bounds=card.TransformToAncestor(main).TransformBounds(new Rect(0,0,card.ActualWidth,card.ActualHeight));Check(bounds.Left>=-1&&bounds.Right<=main.ActualWidth+1&&bounds.Bottom<=main.ActualHeight+1,"Card in viewport");var label=(StackPanel)((Grid)card.Child).Children[1];Check(label.DesiredSize.Height<=card.ActualHeight-4,"Wrapping fits card");}foreach(var slot in heroSlots){var bounds=slot.TransformToAncestor(main).TransformBounds(new Rect(0,0,slot.ActualWidth,slot.ActualHeight));Check(bounds.Bottom<=main.ActualHeight+1,"Hero component in viewport");}Check(crystals.Count==20,"Twenty crystals");CheckNormalWeights(this);}
- void Check(bool condition,string message){if(!condition)throw new Exception(message);checks++;}
- void CheckNormalWeights(DependencyObject node){var text=node as TextBlock;if(text!=null)Check(text.FontWeight==FontWeights.Normal,"Text weight");var control=node as Control;if(control!=null)Check(control.FontWeight==FontWeights.Normal,"Control weight");for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)CheckNormalWeights(VisualTreeHelper.GetChild(node,i));}
+
 }
 public static class Program {
  [STAThread]public static void Main(string[] args){try{
-  string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow(args.Length>0&&args[0]=="--preview");if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
-  if((args.Length==2||args.Length==4&&args[2]=="--scope"&&(args[3]=="summon"||args[3]=="turn-end"||args[3]=="hero-visuals"||args[3]=="triggers"||args[3]=="deathrattle"||args[3]=="druid-spells"||args[3]=="emote-selection"||args[3]=="overload"||args[3]=="spell-cards"||args[3]=="opening-turn"||args[3]=="deck-picker"||args[3]=="hero-freeze"||args[3]=="combo"||args[3]=="warlock"||args[3]=="visual-polish"||args[3]=="graveyard"||args[3]=="rogue"||args[3]=="warrior"||args[3]=="secret-presentation"||args[3]=="secrets"))&&args[0]=="--preview")window.Loaded+=(s,e)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{if(args.Length==4){if(args[3]=="secrets")window.PreviewSecretScope(args[1]);else if(args[3]=="secret-presentation")window.PreviewSecretPresentationScope(args[1]);else if(args[3]=="warrior")window.PreviewWarriorScope(args[1]);else if(args[3]=="rogue")window.PreviewRogueScope(args[1]);else if(args[3]=="graveyard")window.PreviewGraveyardScope(args[1]);else if(args[3]=="visual-polish")window.PreviewVisualPolishScope(args[1]);else if(args[3]=="warlock")window.PreviewWarlockScope(args[1]);else if(args[3]=="combo")window.PreviewComboScope(args[1]);else if(args[3]=="hero-freeze")window.PreviewHeroFreezeScope(args[1]);else if(args[3]=="deck-picker")window.PreviewDeckPickerScope(args[1]);else if(args[3]=="opening-turn")window.PreviewOpeningTurnScope(args[1]);else if(args[3]=="spell-cards")window.PreviewSpellCardsScope(args[1]);else if(args[3]=="overload")window.PreviewOverloadScope(args[1]);else if(args[3]=="emote-selection")window.PreviewEmoteSelectionScope(args[1]);else if(args[3]=="druid-spells")window.PreviewDruidSpellScope(args[1]);else if(args[3]=="deathrattle")window.PreviewDeathrattleScope(args[1]);else if(args[3]=="triggers")window.PreviewTriggerScope(args[1]);else if(args[3]=="hero-visuals")window.PreviewHeroVisualScope(args[1]);else if(args[3]=="turn-end")window.PreviewTurnEndScope(args[1]);else window.PreviewSummonScope(args[1]);}else window.PreviewSuite(args[1]);}catch(Exception ex){File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
+  string updateRoot=AppDomain.CurrentDomain.BaseDirectory;if(args.Length==2&&args[0]=="--check-updates"){var releases=UpdateCore.Releases(System.Threading.CancellationToken.None);UpdateCore.Write(args[1],releases);return;}bool updateLaunch=args.Length==2&&args[0]=="--update-token";if(args.Length>0&&args[0]=="--preview"){}else if(!updateLaunch&&UpdateCore.RecoverBeforeStart(updateRoot))return;UpdateCore.CleanupRunners(updateRoot);var app=new Application();var window=new PanelWindow(args.Length>0&&args[0]=="--preview");if(updateLaunch)window.Loaded+=(s,e)=>UpdateCore.Health(updateRoot,args[1]);if(args.Length==1&&args[0]=="--showcase")window.ShowCodexMinimal();
+  if(args.Length>0&&args[0]=="--preview"){
+   if(args.Length!=2&&args.Length!=4)throw new InvalidOperationException("预览参数无效。");
+   window.Loaded+=(sender,eventArgs)=>window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>{try{
+#if VERIFY
+    window.RunVerification(args.Length==4?args[3]:"full",args[1]);
+#else
+    if(args.Length!=2)throw new InvalidOperationException("规则检查请使用 scripts/test.ps1。");window.PreviewAppearance(args[1]);
+#endif
+   }catch(Exception ex){Directory.CreateDirectory(args[1]);File.WriteAllText(Path.Combine(args[1],"error.txt"),ex.ToString());Environment.ExitCode=1;}window.Close();}));
+  }
   app.Run(window);
  }catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"startup-error.txt"),ex.ToString());Environment.ExitCode=1;}
  }

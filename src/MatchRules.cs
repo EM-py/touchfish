@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 namespace Touchfish {
 public sealed class MatchRules {
  readonly Dictionary<string,CardEffect> effects=new Dictionary<string,CardEffect>();readonly CardCatalog catalog;
+ public readonly List<ConditionalTrigger> Triggers=new List<ConditionalTrigger>(ConditionalTriggerRules.Definitions);
+ public void RegisterTrigger(ConditionalTrigger trigger){if(trigger==null||trigger.Condition==null||trigger.Apply==null||String.IsNullOrWhiteSpace(trigger.CardId))throw new ArgumentException("触发定义不完整。");Triggers.Add(trigger);}
  public IEnumerable<string> RegisteredIds{get{return effects.Keys;}}
  static readonly string[] SimpleMechanics={"TAUNT","CHARGE","DIVINE_SHIELD","WINDFURY","POISONOUS","STEALTH","SPELLPOWER","CANT_ATTACK","CANT_BE_TARGETED_BY_ABILITIES","ELUSIVE","OVERLOAD"};
  public MatchRules(CardCatalog source){catalog=source;
@@ -17,7 +19,7 @@ public sealed class MatchRules {
   Register("EX1_103","NONE",c=>{foreach(var u in c.Game.Players.SelectMany(p=>p.Board).Where(u=>u.Id!=c.Summoned.Id&&u.Race=="MURLOC"&&u.Health>0).ToArray())c.Game.Buff(new MatchTarget(u.Owner,u.Id),0,2);});
   Register("EX1_050","NONE",c=>{c.Game.Draw(c.Seat,2);c.Game.Draw(1-c.Seat,2);});
   Register("CS2_025","NONE",c=>Area(c,1-c.Seat,1,false));Register("CS2_032","NONE",c=>Area(c,1-c.Seat,4,false));Register("CS2_028","NONE",c=>{Area(c,1-c.Seat,2,false);foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Freeze(target);});Register("CS2_026","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Freeze(target);});
-  Register("CS2_027","NONE",c=>{c.Game.Summon(c.Seat,"VAN_CS2_mirror");c.Game.Summon(c.Seat,"VAN_CS2_mirror");},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
+  Register("CS2_027","NONE",c=>{c.Game.Summon(c.Seat,"VAN_CS2_mirror");c.Game.Summon(c.Seat,"VAN_CS2_mirror");},(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
   Register("EX1_277","NONE",c=>Missiles(c,3));Register("EX1_384","NONE",c=>Missiles(c,8));
   Register("CS2_013","NONE",c=>DruidSpellRules.WildGrowth(c.Game,c.Seat));
   Register("EX1_158","NONE",c=>DruidSpellRules.SoulOfForest(c.Game,c.Seat));
@@ -30,7 +32,7 @@ public sealed class MatchRules {
   Register("CS2_012","ENEMY_CHARACTER",c=>{Hit(c,4);foreach(var target in c.Game.Characters(1-c.Seat))if(target.UnitId!=c.Target.UnitId)c.Game.Damage(target,1+c.Game.SpellPower(c.Seat));});
   Register("EX1_173","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Draw(c.Seat,1);});Register("EX1_161","MINION",c=>{Kill(c);c.Game.Draw(1-c.Seat,2);});
   Register("CS2_039","MINION",c=>c.Game.Unit(c.Target).Windfury=true);Register("CS2_041","MINION",c=>{c.Game.Heal(c.Target,1000);c.Game.Unit(c.Target).Taunt=true;});Register("CS2_045","FRIENDLY_CHARACTER",c=>{if(c.Target.Hero)c.Game.Players[c.Seat].TempAttack+=3;else c.Game.Unit(c.Target).TempAttack+=3;});Register("CS2_046","NONE",c=>{foreach(var unit in c.Game.Players[c.Seat].Board)unit.TempAttack+=3;});
-  Register("EX1_245","MINION",c=>{c.Game.Silence(c.Target);Hit(c,1);});Register("EX1_248","NONE",c=>{c.Game.Summon(c.Seat,"VAN_EX1_tk11");c.Game.Summon(c.Seat,"VAN_EX1_tk11");},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
+  Register("EX1_245","MINION",c=>{c.Game.Silence(c.Target);Hit(c,1);});Register("EX1_248","NONE",c=>{c.Game.Summon(c.Seat,"VAN_EX1_tk11");c.Game.Summon(c.Seat,"VAN_EX1_tk11");},(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
   Register("EX1_259","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false)){var roll=c.Game.RandomTarget(new[]{new MatchTarget(0),new MatchTarget(1)});c.Game.Damage(target,2+roll.Seat+c.Game.SpellPower(c.Seat));}});
   Register("CS2_061","ANY_CHARACTER",c=>{Hit(c,2);c.Game.Heal(new MatchTarget(c.Seat),2);});Register("CS2_062","NONE",c=>{Area(c,0,3,true);Area(c,1,3,true);});Register("EX1_308","ANY_CHARACTER",c=>{Hit(c,4);c.Game.DiscardRandom(c.Seat,1);});
   Register("EX1_306","NONE",c=>c.Game.DiscardRandom(c.Seat,1));Register("EX1_310","NONE",c=>c.Game.DiscardRandom(c.Seat,2));Register("NEW1_030","NONE",c=>c.Game.DeathwingBattlecry(c.Seat,c.Summoned));
@@ -39,7 +41,7 @@ public sealed class MatchRules {
   Register("EX1_131","NONE",ComboRules.Apply);Register("EX1_133","ANY_CHARACTER",ComboRules.Apply);Register("EX1_134","NONE",ComboRules.Apply);Register("EX1_137","NONE",ComboRules.Apply);Register("EX1_613","NONE",ComboRules.Apply);Register("NEW1_005","NONE",ComboRules.Apply);
   Register("CS2_074","NONE",c=>c.Game.Players[c.Seat].WeaponAttack+=2,(g,s)=>g.Players[s].WeaponDurability==0?"需要先装备武器。":null);Register("EX1_278","ANY_CHARACTER",c=>{Hit(c,1);c.Game.Draw(c.Seat,1);});Register("EX1_129","NONE",c=>{Area(c,1-c.Seat,1,false);c.Game.Draw(c.Seat,1);});
   Register("CS2_084","MINION",c=>c.Game.SetHealth(c.Target,1));Register("EX1_539","ANY_CHARACTER",c=>Hit(c,c.Game.Players[c.Seat].Board.Any(m=>m.Race=="BEAST")?5:3));Register("EX1_617","NONE",c=>{var target=c.Game.RandomTarget(c.Game.Characters(1-c.Seat,false));if(target!=null)c.Game.Unit(target).DamageTaken=c.Game.Unit(target).MaxHealth;},(g,s)=>g.Players[1-s].Board.Count==0?"对方没有随从。":null);
-  Register("NEW1_031","NONE",c=>{var token=c.Game.RandomTarget(new[]{new MatchTarget(0),new MatchTarget(1),new MatchTarget(2)});c.Game.Summon(c.Seat,new[]{"VAN_NEW1_032","VAN_NEW1_033","VAN_NEW1_034"}[token.Seat]);},(g,s)=>g.Players[s].Board.Count>=7?"战场已满。":null);
+  Register("NEW1_031","NONE",c=>{var token=c.Game.RandomTarget(new[]{new MatchTarget(0),new MatchTarget(1),new MatchTarget(2)});c.Game.Summon(c.Seat,new[]{"VAN_NEW1_032","VAN_NEW1_033","VAN_NEW1_034"}[token.Seat]);},(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
   Register("CS2_087","MINION",c=>c.Game.Buff(c.Target,3,0));Register("CS2_092","MINION",c=>c.Game.Buff(c.Target,4,4));Register("EX1_371","MINION",c=>c.Game.Unit(c.Target).Shield=true);Register("CS2_093","NONE",c=>Area(c,1-c.Seat,2,true));Register("CS2_094","ANY_CHARACTER",c=>{Hit(c,3);c.Game.Draw(c.Seat,1);});Register("EX1_619","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.SetHealth(target,1);});Register("EX1_360","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack=1-unit.BaseAttack;});Register("EX1_355","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack+=c.Game.AttackValue(unit);});
   Register("DS1_233","NONE",c=>c.Game.Damage(new MatchTarget(1-c.Seat),5+c.Game.SpellPower(c.Seat)));Register("CS2_004","MINION",c=>{c.Game.Buff(c.Target,0,2);c.Game.Draw(c.Seat,1);});Register("CS2_234","LOW_ATTACK",Kill);Register("EX1_622","HIGH_ATTACK",Kill);Register("CS2_236","MINION",c=>c.Game.Buff(c.Target,0,c.Game.Unit(c.Target).Health));Register("CS1_129","MINION",c=>{var unit=c.Game.Unit(c.Target);unit.BuffAttack=unit.Health-unit.BaseAttack;});Register("EX1_332","MINION",c=>c.Game.Silence(c.Target));
   Register("CS1_112","NONE",c=>{Area(c,1-c.Seat,2,true);foreach(var target in c.Game.Characters(c.Seat))c.Game.Heal(target,2);});Register("EX1_621","NONE",c=>{foreach(var target in c.Game.Characters(0,false).Concat(c.Game.Characters(1,false)))c.Game.Heal(target,4);});Register("EX1_624","ANY_CHARACTER",c=>{Hit(c,5);c.Game.Heal(new MatchTarget(c.Seat),5);});Register("EX1_626","NONE",c=>{foreach(var target in c.Game.Characters(1-c.Seat,false))c.Game.Silence(target);c.Game.Draw(c.Seat,1);});
@@ -58,8 +60,8 @@ public sealed class MatchRules {
   foreach(string id in new[]{"EX1_170","EX1_556","EX1_096","EX1_029","EX1_012","CS2_033","EX1_162","CS2_122","DS1_175"})Register(id,"NONE",c=>{});
   foreach(string id in TurnEndRules.Ids.Where(id=>id!="EX1_316"&&id!="EX1_334"&&id!="EX1_571"))Register(id,"NONE",c=>{});
   Register("EX1_316","FRIENDLY_MINION",c=>{c.Game.Buff(c.Target,4,4);c.Game.DelayDestroy(c.Target,false,c.Seat);});
-  Register("EX1_334","ENEMY_LOW_ATTACK",c=>c.Game.TakeTemporaryControl(c.Seat,c.Target),(g,s)=>g.Players[s].Board.Count>=7?"己方战场已满。":null);
-  Register("EX1_571","NONE",c=>{for(int n=0;n<3;n++)c.Game.Summon(c.Seat,"VAN_EX1_tk9b");},(g,s)=>g.Players[s].Board.Count>=7?"己方战场已满。":null);
+  Register("EX1_334","ENEMY_LOW_ATTACK",c=>c.Game.TakeTemporaryControl(c.Seat,c.Target),(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"己方战场已满。":null);
+  Register("EX1_571","NONE",c=>{for(int n=0;n<3;n++)c.Game.Summon(c.Seat,"VAN_EX1_tk9b");},(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"己方战场已满。":null);
   Register("EX1_tk9b","NONE",c=>{});Register("NEW1_009","NONE",c=>{});
   Register("DREAM_02","NONE",c=>{int amount=5+c.Game.SpellPower(c.Seat);foreach(var target in c.Game.Characters(0).Concat(c.Game.Characters(1)).Where(t=>t.Hero||c.Game.Card(c.Game.Unit(t).CardId).BaseId!="EX1_572").ToArray())c.Game.Damage(target,amount);});
   Register("DREAM_04","MINION",c=>c.Game.ReturnToHand(c.Target));Register("DREAM_05","MINION",c=>{c.Game.Buff(c.Target,5,5);c.Game.DelayDestroy(c.Target,true,c.Seat);});
@@ -87,7 +89,10 @@ public sealed class MatchRules {
   // Truesilver Champion's heal and Doomhammer's windfury are implemented by the engine.
   Register("CS2_097","NONE",c=>{});
   foreach(string id in new[]{"EX1_154","EX1_155","EX1_160","EX1_164","EX1_165","EX1_166","EX1_178","EX1_573","NEW1_007","NEW1_008"})Register(id,"NONE",ApplyChoice);
+  RuleModules.Configure(this);
  }
+ public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}
+ public void RegisterExtension(string effectId,string target,Action<EffectContext> apply,Func<MatchEngine,int,string> requirement=null){if(String.IsNullOrWhiteSpace(effectId)||!effectId.Contains(":" )||apply==null||effects.ContainsKey(effectId))throw new ArgumentException("扩展效果必须使用独立命名空间和版本，不能覆盖现有效果。");Register(effectId,target,apply,requirement);}
  public bool IsChoice(CardRecord card){return card!=null&&Choices(card).Length==2;}
  public bool ValidChoice(CardRecord card,string key){return Choices(card).Any(option=>option.Key==key);}
  public MatchChoiceOption[] Choices(CardRecord card){if(card==null)return new MatchChoiceOption[0];switch(card.BaseId){
@@ -108,7 +113,7 @@ public sealed class MatchRules {
   case "EX1_154":Hit(c,c.Choice=="three"?3:1);if(c.Choice=="one-draw")c.Game.Draw(c.Seat,1);break;
   case "EX1_155":if(c.Choice=="attack")c.Game.Buff(c.Target,4,0);else{c.Game.Buff(c.Target,0,4);c.Game.Unit(c.Target).Taunt=true;}break;
   case "EX1_160":if(c.Choice=="buff"){foreach(var unit in c.Game.Players[c.Seat].Board.ToArray())c.Game.Buff(new MatchTarget(c.Seat,unit.Id),1,1);}else c.Game.Summon(c.Seat,"GAME_PANTHER");break;
-  case "EX1_164":if(c.Choice=="mana"){var player=c.Game.Players[c.Seat];int gained=Math.Min(2,10-player.MaxMana);player.MaxMana+=gained;player.Mana=Math.Min(player.MaxMana,player.Mana+gained);}else c.Game.Draw(c.Seat,3);break;
+  case "EX1_164":if(c.Choice=="mana"){var player=c.Game.Players[c.Seat];int gained=Math.Min(2,c.Game.Mode.ManaLimit-player.MaxMana);player.MaxMana+=gained;player.Mana=Math.Min(player.MaxMana,player.Mana+gained);}else c.Game.Draw(c.Seat,3);break;
   case "EX1_165":c.Game.Transform(new MatchTarget(c.Seat,c.Summoned.Id),c.Choice=="charge"?"VAN_EX1_165t1":"VAN_EX1_165t2");break;
   case "EX1_166":if(c.Choice=="damage")c.Game.Damage(c.Target,2);else c.Game.Silence(c.Target);break;
   case "EX1_178":if(c.Choice=="attack")c.Summoned.BuffAttack+=5;else{c.Game.Buff(new MatchTarget(c.Seat,c.Summoned.Id),0,5);c.Summoned.Taunt=true;}break;
@@ -123,9 +128,9 @@ public sealed class MatchRules {
  static void Area(EffectContext context,int seat,int amount,bool hero){foreach(var target in context.Game.Characters(seat,hero))context.Game.Damage(target,amount+context.Game.SpellPower(context.Seat));}
  static void Missiles(EffectContext context,int amount){for(int n=0;n<amount+context.Game.SpellPower(context.Seat);n++){var target=context.Game.RandomTarget(context.Game.Characters(1-context.Seat).Where(t=>t.Hero||context.Game.Unit(t).Health>0));if(target!=null){context.Game.DamageSequenceStep(target,1);if(context.Game.Finished)break;}}}
  static void Adjacent(EffectContext context,int attack,int health,bool taunt){var board=context.Game.Players[context.Seat].Board;int index=board.IndexOf(context.Summoned);foreach(int place in new[]{index-1,index+1})if(place>=0&&place<board.Count){context.Game.Buff(new MatchTarget(context.Seat,board[place].Id),attack,health);if(taunt)board[place].Taunt=true;}}
- public bool Supports(CardRecord card){if(card.Id=="GAME_COIN")return true;if(effects.ContainsKey(card.BaseId))return true;if(card.Type!="MINION"&&card.Type!="WEAPON")return false;if(card.Mechanics!=null&&card.Mechanics.Any(m=>!SimpleMechanics.Contains(m)))return false;string text=Regex.Replace(card.Text??"",@"法术伤害\+\d+|过载[：:]?\s*[（(]\d+[）)]|嘲讽|冲锋|圣盾|风怒|剧毒|潜行|无法攻击|不能攻击|扰魔|无法成为法术或英雄技能的目标","");return Regex.Replace(text,@"[\s，。；,:;.（）()]+","").Length==0;}
- public CardEffect Effect(CardRecord card){CardEffect effect;if(effects.TryGetValue(card.BaseId,out effect))return effect;return new CardEffect{Apply=c=>{}};}
- public void Death(MatchEngine game,BattleUnit unit){DeathrattleRules.Resolve(game,unit);}
+ public bool Supports(CardRecord card){if(!String.IsNullOrEmpty(card.EffectId))return effects.ContainsKey(card.EffectId);if(card.Id=="GAME_COIN")return true;if(effects.ContainsKey(EffectKey(card)))return true;if(card.Type!="MINION"&&card.Type!="WEAPON")return false;if(card.Mechanics!=null&&card.Mechanics.Any(m=>!SimpleMechanics.Contains(m)))return false;string text=Regex.Replace(card.Text??"",@"法术伤害\+\d+|过载[：:]?\s*[（(]\d+[）)]|嘲讽|冲锋|圣盾|风怒|剧毒|潜行|无法攻击|不能攻击|扰魔|无法成为法术或英雄技能的目标","");return Regex.Replace(text,@"[\s，。；,:;.（）()]+","").Length==0;}
+ public CardEffect Effect(CardRecord card){CardEffect effect;if(effects.TryGetValue(EffectKey(card),out effect))return effect;return new CardEffect{Apply=c=>{}};}
+ public void Death(MatchEngine game,BattleUnit unit){ConditionalTriggerRules.SourceDied(game,unit);}
  public DeckDocument TrainingDeck(string classId){var pool=catalog.Pool("classic-2014");var deck=new DeckDocument{ClassId=classId,PoolId=pool.Id,Name="基础练习 · "+classId};var all=catalog.Deckable(pool);var selected=all.Where(c=>c.CardClass==classId&&c.Rarity!="LEGENDARY"&&Supports(c)).Take(8).Concat(all.Where(c=>c.CardClass=="NEUTRAL"&&c.Rarity!="LEGENDARY"&&c.Cost>=1&&c.Cost<=5&&Supports(c))).Take(15);foreach(var card in selected)deck.Cards[card.Id]=2;DeckRules.Validate(catalog,deck,true);return deck;}
 }
 }
