@@ -2,9 +2,9 @@
 using System.Linq;
 
 namespace Touchfish {
-public enum MatchTriggerTiming { CardPlayed, SpellCast, TurnStart }
+public enum MatchTriggerTiming { CardPlayed, SpellCast, TurnStart, MinionDamaged }
 public sealed class MatchTriggerContext {
- public MatchEngine Game;public int Seat;public CardRecord Card;public BattleUnit Source;
+ public MatchEngine Game;public int Seat,Amount;public CardRecord Card;public BattleUnit Source,Damaged;
 }
 // Conditions and effects are separate; new conditional cards register their timing here.
 public sealed class ConditionalTrigger {
@@ -13,11 +13,14 @@ public sealed class ConditionalTrigger {
 }
 public static class ConditionalTriggerRules {
  static readonly ConditionalTrigger[] rules={
+  new ConditionalTrigger{CardId="EX1_402",Timing=MatchTriggerTiming.MinionDamaged,Condition=c=>c.Source.Owner==c.Damaged.Owner,Apply=c=>c.Game.Players[c.Source.Owner].Armor++},
+  new ConditionalTrigger{CardId="EX1_604",Timing=MatchTriggerTiming.MinionDamaged,Condition=c=>true,Apply=c=>c.Source.BuffAttack++},
   new ConditionalTrigger{CardId="EX1_044",Timing=MatchTriggerTiming.CardPlayed,Condition=c=>c.Source.Owner==c.Seat,Apply=c=>c.Game.Buff(new MatchTarget(c.Source.Owner,c.Source.Id),1,1)},
   new ConditionalTrigger{CardId="EX1_100",Timing=MatchTriggerTiming.SpellCast,Condition=c=>c.Card!=null&&c.Card.Type=="SPELL",Apply=c=>c.Game.CopySpellToHand(1-c.Seat,c.Card)},
   new ConditionalTrigger{CardId="EX1_557",Timing=MatchTriggerTiming.TurnStart,Condition=c=>c.Source.Owner==c.Seat,Apply=c=>{if(c.Game.TriggerCoinFlip())c.Game.FishingDraw(c.Source);}},
   new ConditionalTrigger{CardId="NEW1_021",Timing=MatchTriggerTiming.TurnStart,Condition=c=>c.Source.Owner==c.Seat,Apply=c=>c.Game.DestroyAllMinions()}
  };
+ public static void MinionDamaged(MatchEngine game,BattleUnit damaged,int amount,BattleUnit[] listeners){foreach(var source in listeners){if(source.Silenced||!game.Players[source.Owner].Board.Contains(source))continue;foreach(var rule in rules.Where(r=>r.Timing==MatchTriggerTiming.MinionDamaged&&r.CardId==game.Card(source.CardId).BaseId)){var context=new MatchTriggerContext{Game=game,Seat=damaged.Owner,Source=source,Damaged=damaged,Amount=amount};if(rule.Condition(context))rule.Apply(context);}}}
  public static string[] CardIds{get{return rules.Select(r=>r.CardId).Distinct().ToArray();}}
  public static void Resolve(MatchEngine game,MatchTriggerTiming timing,int seat,CardRecord card=null){
   var queue=game.Players.SelectMany(p=>p.Board).OrderBy(u=>u.Id).ToArray();

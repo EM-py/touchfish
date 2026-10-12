@@ -16,6 +16,7 @@ public sealed class MatchVisualCursor {
 public partial class MatchEngine {
  public string VisualSession=Guid.NewGuid().ToString("N");public readonly List<MatchVisualEvent> VisualEvents=new List<MatchVisualEvent>();int visualSequence,visualAction;
  public void EmitSpell(CardRecord card,int seat,int paidCost,string choice){
+  if(MatchEngine.Has(card,"SECRET")){EmitVisual("spell",seat,name:"一张奥秘");return;}
   EmitVisual("spell",seat,name:card.Name);var item=VisualEvents[VisualEvents.Count-1];item.CardId=card.Id;item.CardCost=card.Cost;item.PaidCost=paidCost;item.CardText=card.Text;
   if(Rules.IsChoice(card)&&choice!=null)item.CardText+="\n本次抉择："+System.Linq.Enumerable.First(Rules.Choices(card),option=>option.Key==choice).Title;
  }
