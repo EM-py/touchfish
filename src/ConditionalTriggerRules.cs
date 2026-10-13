@@ -34,7 +34,7 @@ public static class ConditionalTriggerRules {
   foreach(var source in queue){if(game.Finished)break;if(source.Silenced||source.Health<=0||!game.Players[source.Owner].Board.Contains(source))continue;
    foreach(var rule in game.Rules.Triggers.Where(r=>r.Timing==timing&&r.CardId==MatchRules.EffectKey(game.Card(source.CardId)))){
     var context=new MatchTriggerContext{Game=game,Seat=seat,Card=card,Source=source,Healed=healed,Amount=amount,Summoned=summoned,Died=died,HealedTarget=healedTarget};if(!rule.Condition(context))continue;
-    game.Log.Add("玩家 "+(source.Owner+1)+" · 触发："+game.Card(source.CardId).Name);rule.Apply(context);if(cleanup)game.Cleanup();if(game.Finished)break;
+    game.Log.Add(game.PlayerLabel(source.Owner)+" · 触发："+game.Card(source.CardId).Name);rule.Apply(context);if(cleanup)game.Cleanup();if(game.Finished)break;
    }
   }
  }
@@ -49,6 +49,6 @@ public static class TimedCostRules {
 }
 public sealed partial class MatchEngine {
  internal bool TriggerCoinFlip(){return random.Next(2)==0;}
- public void CopySpellToHand(int seat,CardRecord card){var player=Players[seat];if(player.Hand.Count>=Mode.HandLimit){Log.Add("玩家 "+(seat+1)+" · 手牌已满，未获得法术复制。");return;}player.Hand.Add(new HandCard{Id=nextId++,CardId=card.Id,Generated=true});Log.Add("玩家 "+(seat+1)+" · 获得法术复制 1 张。");}
+ public void CopySpellToHand(int seat,CardRecord card){var player=Players[seat];if(player.Hand.Count>=Mode.HandLimit){Log.Add(PlayerLabel(seat)+" · 手牌已满，未获得法术复制。");return;}player.Hand.Add(new HandCard{Id=nextId++,CardId=card.Id,Generated=true});Log.Add(PlayerLabel(seat)+" · 获得法术复制 1 张。");}
 }
 }
