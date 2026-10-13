@@ -27,7 +27,7 @@ public partial class PanelWindow : Window {
  static readonly Brush Ink=B("#34383D"), Muted=B("#83888F"), Line=B("#E7E9EC"), Green=B("#387C60");
  Grid shell, main; StackPanel detail; TextBlock detailTitle, detailText, detailMeta, status;
  Border detailBorder; Button compactButton, detailButton, pinButton, gameTab, logTab;
- bool fullEffects;CheckBox fullEffectsOption;
+ EffectLevel effectLevel;bool fullEffects{get{return effectLevel>=EffectLevel.Low;}set{effectLevel=value?EffectLevel.High:EffectLevel.Off;}}bool HighEffects{get{return effectLevel==EffectLevel.High;}}EffectLevel CurrentEffects{get{return minimal?EffectLevel.Off:effectLevel;}}Button effectsOffOption,effectsLowOption,effectsHighOption;
  Grid logPanel; bool fullBoard=true, details=false, log=false; Entry selected;
  List<Border> rows=new List<Border>();
  List<FrameworkElement> heroSlots=new List<FrameworkElement>(); List<Polygon> crystals=new List<Polygon>(); List<ScrollViewer> lanes=new List<ScrollViewer>();
@@ -195,11 +195,11 @@ public partial class PanelWindow : Window {
   stack.Children.Add(T("Codex 明暗",11,Muted));var tones=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,5,0,12)};
   lightOption=Option("浅色",120);darkOption=Option("深色",120);tones.Children.Add(lightOption);tones.Children.Add(darkOption);stack.Children.Add(tones);
   lightOption.Click+=(s,e)=>{ApplyTheme(codex,false);SavePreferences();};darkOption.Click+=(s,e)=>{ApplyTheme(codex,true);SavePreferences();};
-  fullEffectsOption=new CheckBox{Content="特效全开",FontSize=11,FontWeight=FontWeights.Normal,Foreground=Ink,Margin=new Thickness(0,0,0,5),IsChecked=fullEffects};fullEffectsOption.Click+=(s,e)=>{SetFullEffects(fullEffectsOption.IsChecked==true);SavePreferences();};stack.Children.Add(fullEffectsOption);
+  stack.Children.Add(T("特效",11,Muted));var levels=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,5,0,5)};effectsOffOption=Option("关",58);effectsLowOption=Option("低",58);effectsHighOption=Option("高",58);levels.Children.Add(effectsOffOption);levels.Children.Add(effectsLowOption);levels.Children.Add(effectsHighOption);stack.Children.Add(levels);effectsOffOption.Click+=(s,e)=>{SetEffectsLevel(EffectLevel.Off);SavePreferences();};effectsLowOption.Click+=(s,e)=>{SetEffectsLevel(EffectLevel.Low);SavePreferences();};effectsHighOption.Click+=(s,e)=>{SetEffectsLevel(EffectLevel.High);SavePreferences();};
   var note=T("即时生效，自动记住选择。所有文字保持正常字重。",10,Muted);note.TextWrapping=TextWrapping.Wrap;stack.Children.Add(note);UpdateSettingButtons();
  }
  Button Option(string text,double width){var button=Btn(text,width);button.Height=29;button.Margin=new Thickness(0,0,6,0);return button;}
- void UpdateSettingButtons(){if(fullEffectsOption!=null)fullEffectsOption.IsChecked=fullEffects;if(wpsOption==null)return;Mark(wpsOption,!codex);Mark(codexOption,codex);Mark(normalOption,!minimal);Mark(minimalOption,minimal);Mark(lightOption,!dark);Mark(darkOption,dark);lightOption.IsEnabled=codex;darkOption.IsEnabled=codex;lightOption.Opacity=darkOption.Opacity=codex?1:.45;}
+ void UpdateSettingButtons(){if(effectsOffOption!=null){Mark(effectsOffOption,effectLevel==EffectLevel.Off);Mark(effectsLowOption,effectLevel==EffectLevel.Low);Mark(effectsHighOption,effectLevel==EffectLevel.High);}if(wpsOption==null)return;Mark(wpsOption,!codex);Mark(codexOption,codex);Mark(normalOption,!minimal);Mark(minimalOption,minimal);Mark(lightOption,!dark);Mark(darkOption,dark);lightOption.IsEnabled=codex;darkOption.IsEnabled=codex;lightOption.Opacity=darkOption.Opacity=codex?1:.45;}
  void Mark(Button button,bool active){button.Background=active?B("#EDF4F0"):B("#F7F8FA");button.Foreground=active?Ink:Muted;}
  void ApplyTheme(bool useCodex,bool useDark){
   codex=useCodex;dark=useDark;
@@ -218,16 +218,17 @@ public partial class PanelWindow : Window {
   foreach(Border slot in heroSlots){var stack=(StackPanel)slot.Child;var title=(TextBlock)stack.Children[0];var meta=(TextBlock)stack.Children[1];var entry=(Entry)slot.Tag;title.Text=minimal?(entry.Kind=="英雄"?entry.Health.ToString():entry.Kind=="武器"?"武":"技"):slotLabels[slot][0];title.TextAlignment=minimal?TextAlignment.Center:entry.Kind=="英雄"?TextAlignment.Center:TextAlignment.Left;meta.Visibility=minimal?Visibility.Collapsed:Visibility.Visible;meta.Margin=new Thickness(0,2,0,0);}
   foreach(var crystal in crystals){crystal.Width=crystal.Height=minimal?8:10;crystal.Margin=new Thickness(minimal?1:2,0,0,0);}
   detailHeader.Height=detailBack.Height=minimal?12:15;detailBack.FontSize=minimal?9:11;detailMeta.Visibility=minimal?Visibility.Collapsed:Visibility.Visible;detail.Margin=minimal?new Thickness(4,0,4,0):new Thickness(8,2,8,2);detailText.Margin=new Thickness(0,minimal?0:2,0,0);detailText.LineHeight=minimal?11:double.NaN;detailBorder.Margin=minimal?new Thickness(0,0,0,0):new Thickness(0,2,0,4);
-  RebuildBattle();RebuildHand();ApplyFonts(shell);UpdateSettingButtons();ApplyDeckMode();if(match!=null)RenderMatch();ShowPage(currentPage);status.Text=minimal?"极简 · 未连接":"视觉预览 · 未连接";
+  RebuildBattle();RebuildHand();ApplyFonts(shell);UpdateSettingButtons();ApplyDeckMode();if(lanArenaView!=null)UpdateArenaDraftUi(lanArenaView);if(match!=null)RenderMatch();ShowPage(currentPage);status.Text=minimal?"极简 · 未连接":"视觉预览 · 未连接";
  }
  void RebuildHand(){foreach(var card in handCards)rows.Remove(card);handCards.Clear();main.Children.Remove(handLane);lanes.Clear();handLane=Lane(new Entry[]{new Entry("火球术","法术",4,0,0,"造成6点伤害。","","法术"),new Entry("寒冰箭","法术",2,0,0,"造成3点伤害，并冻结目标。","","法术"),new Entry("酸性沼泽软泥怪","战吼",2,3,2,"战吼：摧毁对手的武器。",""),new Entry("石拳食人魔","—",6,6,7,"","")},"手牌  4    /    牌库  16",true);Put(main,handLane,6);handLane.Visibility=details?Visibility.Collapsed:Visibility.Visible;Panel.SetZIndex(detailBorder,1);RefreshSelection();}
  void ApplyFonts(DependencyObject root){Walk(root,node=>{var text=node as TextBlock;if(text!=null&&text.Tag is double){text.FontSize=Math.Max(9,(double)text.Tag-(minimal?.5:0));text.FontWeight=FontWeights.Normal;}});}
  static void Walk(DependencyObject root,Action<DependencyObject> action){action(root);foreach(var child in LogicalTreeHelper.GetChildren(root)){var node=child as DependencyObject;if(node!=null)Walk(node,action);}}
  void RefreshSelection(){foreach(var row in rows)row.Background=row.Tag==selected?B("#EDF4F0"):heroSlots.Contains(row)?B("#F7F8FA"):B("#FFFFFF");}
- void SetFullEffects(bool enabled){fullEffects=enabled;NotifyPresentation();if(!enabled&&matchEffects!=null)matchEffects.Clear();RefreshDeck();UpdateSettingButtons();SyncMatchEffectsVisibility();if(match!=null)RenderMatch();}
+ void SetFullEffects(bool enabled){SetEffectsLevel(enabled?EffectLevel.High:EffectLevel.Off);}
+ void SetEffectsLevel(EffectLevel level){effectLevel=EffectSettings.FromWire((int)level);NotifyPresentation();if(matchEffects!=null)matchEffects.Clear();if(presentationLayout!=null)presentationLayout.Clear();RefreshDeck();UpdateSettingButtons();SyncMatchEffectsVisibility();if(match!=null)RenderMatch();}
  string PreferencesPath{get{return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"preferences.ini");}}
- void SavePreferences(){if(previewRun)return;try{File.WriteAllText(PreferencesPath,"theme="+(codex?"codex":"wps")+"\r\nappearance="+(dark?"dark":"light")+"\r\nmode="+(minimal?"minimal":"normal")+"\r\neffects="+(fullEffects?"all":"off")+"\r\n");status.Text="外观设置已保存";}catch(IOException){status.Text="设置已生效，保存失败";}catch(UnauthorizedAccessException){status.Text="设置已生效，目录不可写";}}
- void LoadPreferences(){try{if(!File.Exists(PreferencesPath))return;string value=File.ReadAllText(PreferencesPath);fullEffects=value.Contains("effects=all");ApplyTheme(value.Contains("theme=codex"),value.Contains("appearance=dark"));ApplyMode(value.Contains("mode=minimal"));}catch(IOException){}catch(UnauthorizedAccessException){}}
+ void SavePreferences(){if(previewRun)return;try{File.WriteAllText(PreferencesPath,"theme="+(codex?"codex":"wps")+"\r\nappearance="+(dark?"dark":"light")+"\r\nmode="+(minimal?"minimal":"normal")+"\r\neffects="+EffectSettings.PreferenceValue(effectLevel)+"\r\n");status.Text="外观设置已保存";}catch(IOException){status.Text="设置已生效，保存失败";}catch(UnauthorizedAccessException){status.Text="设置已生效，目录不可写";}}
+ void LoadPreferences(){try{if(!File.Exists(PreferencesPath))return;string value=File.ReadAllText(PreferencesPath);effectLevel=EffectSettings.ParsePreferences(value);ApplyTheme(value.Contains("theme=codex"),value.Contains("appearance=dark"));ApplyMode(value.Contains("mode=minimal"));}catch(IOException){}catch(UnauthorizedAccessException){}}
  public void ShowCodexMinimal(){ApplyTheme(true,true);ApplyMode(true);}
  
  public void Render(string path){

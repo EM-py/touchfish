@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Touchfish {
 // Public presentation events only: no hidden hand/deck identities.
 public sealed class MatchVisualEvent {
- public int Sequence,Action,Seat,UnitId,Slot=-1,Amount,CardCost,PaidCost,HealthBefore,Overkill;public string Kind,CardName,CardId,CardText;
+ public int Sequence,Action,Seat,UnitId,Slot=-1,TargetSeat=-1,Amount,CardCost,PaidCost,HealthBefore,Overkill;public string Kind,CardName,CardId,CardText;
 }
 public sealed class MatchVisualCursor {
  string session;int sequence;
