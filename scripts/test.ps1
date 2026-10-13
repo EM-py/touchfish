@@ -4,12 +4,13 @@ $Scope=$Scope -replace '\s+',','
 $taskRoot=Split-Path -Parent $PSScriptRoot
 $testRoot=Join-Path $taskRoot 'work/test-bin'
 $ruleNames=@('zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin','shaman','mage','priest','opening','shadowstep','warlock','druid-spells','triggers','engine','library','modes','enchantments','privacy','resolution','warrior','secrets','rogue','deathrattle','combo','overload')
-$wpfNames=@('zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets')
+$wpfNames=@('death-shatter','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets')
 if($Scope -eq 'auto'){
  $paths=@(git -C $taskRoot diff --name-only HEAD)+@(git -C $taskRoot ls-files --others --exclude-standard)
  $selected=@();$selectedWpf=@()
  foreach($path in $paths){
   if($path -notmatch '^(src/|tests/|data/|scripts/test.ps1|build.ps1)'){continue}
+  if($path -match '(?i)(DeathShatter|MatchVisualEvents|MatchVisualEffects)'){$selected+=@('engine','deathrattle');$selectedWpf+='death-shatter';continue}
   if($path -match "(?i)(ZooWarlock|ZooAi)"){$selected+='zoo-ai';$selectedWpf+='zoo-ai';continue}
   if($path -match "(?i)MatchAgent"){$selected+=@('ai','zoo-ai');$selectedWpf+=@('ai','zoo-ai');continue}
   if($path -match "(?i)FreezeMage"){$selected+='ai';$selectedWpf+='ai';continue}
@@ -34,7 +35,7 @@ if($Layer -eq 'rules' -or $Layer -eq 'all'){
  & $ruleExe $taskRoot $rules;if($LASTEXITCODE -ne 0){throw 'Rules checks failed'}
 }
 if($Layer -ne 'rules'){
- if($Layer -eq 'all'){$selected=@('full','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','warrior','secrets','rogue')}
+ if($Layer -eq 'all'){$selected=@('full','death-shatter','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','warrior','secrets','rogue')}
  foreach($name in $selected){if($name -notin $wpfNames){throw "Unknown WPF module: $name"}}
  if($true){& (Join-Path $taskRoot 'build.ps1') -OutputName 'work/test-bin/Touchfish.Tests.exe' -Verification;Copy-Item -LiteralPath (Join-Path $taskRoot 'data') -Destination $testRoot -Recurse -Force}
  $oldNetwork=$env:TOUCHFISH_VERIFY_NETWORK;$oldVisual=$env:TOUCHFISH_VERIFY_VISUAL
