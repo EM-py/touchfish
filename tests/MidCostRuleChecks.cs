@@ -3,7 +3,25 @@ using System.IO;
 using System.Linq;
 using Touchfish;
 public static partial class RuleTests {
- static void MidCost(){
+ static MatchEngine InteractionSeedFixture(){var g=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),2);g.MarkMulliganCompleteForTests();foreach(var p in g.Players){p.Hand.Clear();p.Board.Clear();p.Mana=p.MaxMana=10;}return g;}
+ static void LostSpellTargetRegression(){
+  foreach(string spell in new[]{"CS2_236","CS1_129","EX1_302","EX1_238"}){
+   var g=InteractionSeedFixture();g.Summon(0,"VAN_NEW1_026");g.Summon(0,"VAN_NEW1_019");g.Summon(0,"VAN_NEW1_020");var target=g.Summon(1,"VAN_CS2_231");int hand=Hand(g,spell),cost=g.HandCost(0,g.Players[0].Hand.Single());
+   var result=g.Play(0,hand,new MatchTarget(1,target.Id));
+   Check(result.Success&&!g.Players[1].Board.Contains(target),"Lost target safely fizzles "+spell);
+   Check(g.Players[0].Mana==10-cost&&g.Players[0].Hand.Count==0&&g.CardsPlayed==1,"Fizzled spell is paid and counted once "+spell);
+   Check(g.Players[0].Board.Count==3&&g.Players[0].Board.All(u=>u.DamageTaken==1),"Spell-resolved Pyromancer still triggers "+spell);
+   Check(g.Players[0].Overload==(spell=="EX1_238"?1:0),"Fizzled spell retains overload "+spell);
+  }
+ }
+ static void ReappliedSpellDamageRegression(){
+  var g=MatchFixture();var yeti=g.Summon(0,"VAN_CS2_182");g.Silence(new MatchTarget(0,yeti.Id));Check(g.Play(0,Hand(g,"EX1_584"),position:1).Success&&g.SpellPower(0)==1,"Ancient Mage grants spell damage to previously silenced minion");
+  g.Players[0].Mana=10;Check(g.Play(0,Hand(g,"CS2_029"),new MatchTarget(1)).Success&&g.Players[1].Health==23,"Reapplied spell damage enhances Fireball");
+  var view=LanProtocol.ReadView(catalog,LanProtocol.Copy(LanProtocol.View(g,0,"spell-damage",1)));Check(view.SpellPower(0)==1,"Reapplied spell damage survives public snapshot");
+  g.Silence(new MatchTarget(0,yeti.Id));Check(g.SpellPower(0)==0,"Second silence clears newly granted spell damage");
+  var thalnos=g.Summon(0,"VAN_EX1_012");Check(g.SpellPower(0)==1,"Native spell damage contributes");g.Silence(new MatchTarget(0,thalnos.Id));Check(g.SpellPower(0)==0,"Native spell damage is cleared by silence");
+ }
+ static void MidCost(){LostSpellTargetRegression();ReappliedSpellDamageRegression();
   var all=catalog.Deckable(catalog.Pool("classic-2014"));Check(all.Where(c=>c.Cost==3||c.Cost==4).All(matchRules.Supports),"All classic three and four mana cards supported");
   var g=MatchFixture();int blade=Hand(g,"CS2_181");Check(g.Play(0,blade).Success&&g.Players[0].Board.Single().Health==3,"Blademaster self damage four without spell power");
   g=MatchFixture();var weak=g.Summon(1,"VAN_CS2_182");int big=Hand(g,"EX1_005");Check(!g.Play(0,big,new MatchTarget(1,weak.Id)).Success&&g.Players[0].Mana==10,"Big Game Hunter rejects attack below seven atomically");g.Buff(new MatchTarget(1,weak.Id),3,0);Check(g.Play(0,big,new MatchTarget(1,weak.Id)).Success&&g.Players[1].Board.Count==0,"Big Game Hunter destroys seven attack");g=MatchFixture();Check(g.Play(0,Hand(g,"EX1_005")).Success,"Big Game Hunter plays without battlecry when no legal target");

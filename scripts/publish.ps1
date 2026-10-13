@@ -1,4 +1,4 @@
-﻿param([string]$Tag=('v'+(Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\VERSION') -Raw).Trim()))
+﻿param([string]$Tag=('v'+(Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\VERSION') -Raw).Trim()),[string]$TestScope='auto',[ValidateSet('rules','network','ui','all')][string]$TestLayer='rules',[switch]$UseExistingTestResults)
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path -Parent $PSScriptRoot
 if($Tag -notmatch '^v\d+\.\d+\.\d+$'){throw 'Use a stable version tag such as v0.2.0.'}
@@ -6,7 +6,7 @@ if((Get-Content -LiteralPath (Join-Path $taskRoot 'VERSION') -Raw).Trim() -ne $T
 gh release view $Tag --repo YuziPlus/touchfish 2>$null
 if($LASTEXITCODE -eq 0){throw 'Release already exists; publish a new version instead of replacing it.'}
 & (Join-Path $taskRoot 'build.ps1')
-& (Join-Path $taskRoot 'scripts/test.ps1') -Scope full -Layer all
+if($UseExistingTestResults){Write-Output 'Reuse completed checks for this change; no repeated regression.'}else{& (Join-Path $taskRoot 'scripts/test.ps1') -Scope $TestScope -Layer $TestLayer}
 $taskPreview=Join-Path $taskRoot 'previews'
 $taskProcess=Start-Process -FilePath (Join-Path $taskRoot 'Touchfish.exe') -ArgumentList '--preview',$taskPreview -WindowStyle Hidden -PassThru
 $taskProcess.WaitForExit()

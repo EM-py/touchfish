@@ -13,6 +13,6 @@ public static class WarriorRules {
   case "NEW1_036":p.CommandingShoutTurn=g.Turn;foreach(var u in p.Board)u.CommandingShoutTurn=g.Turn;g.Draw(c.Seat,1);break;
  }}
  public static void Summoned(MatchEngine g,BattleUnit unit,BattleUnit[] commanders){if(g.Players[unit.Owner].CommandingShoutTurn==g.Turn)unit.CommandingShoutTurn=g.Turn;if(commanders.Length>0&&g.AttackValue(unit)<=3)unit.Charge=true;}
- public static void UseWeapon(MatchEngine g,int seat,MatchTarget target){var p=g.Players[seat];if(p.WeaponDurability<=0)return;if(!target.Hero&&g.Card(p.WeaponId).BaseId=="EX1_411")p.WeaponAttack--;else if(--p.WeaponDurability==0)g.BreakWeapon(seat);}
+ public static void UseWeapon(MatchEngine g,int seat,MatchTarget target){var p=g.Players[seat];if(p.WeaponDurability<=0)return;if(!target.Hero&&g.Card(p.WeaponId).BaseId=="EX1_411")p.WeaponAttack=Math.Max(0,p.WeaponAttack-1);else if(--p.WeaponDurability==0)g.BreakWeapon(seat);}
 }
 }

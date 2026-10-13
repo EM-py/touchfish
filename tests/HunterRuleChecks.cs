@@ -4,7 +4,14 @@ using System.IO;
 
 using Touchfish;
 public static partial class RuleTests {
- static void Hunter(){
+ static void HyenaLethalDeathrattleRegression(){
+  var g=InteractionSeedFixture();g.Active=1;var abom=g.Summon(0,"VAN_EX1_097");abom.DamageTaken=2;g.Summon(0,"VAN_CS2_171");var hyena=g.Summon(0,"VAN_EX1_531");
+  Check(g.Play(1,Hand(g,"EX1_251",1)).Success,"Forked Lightning resolves Abomination and beast death wave");
+  Check(g.Players[0].Board.Count==0&&hyena.Health<=0,"Mortally wounded Hyena cannot revive from a later beast trigger");
+  g=MatchFixture();var living=g.Summon(0,"VAN_EX1_531");var beast=g.Summon(0,"VAN_CS2_171");g.Damage(new MatchTarget(0,beast.Id),1);g.Cleanup();
+  Check(g.AttackValue(living)==4&&living.Health==3,"Living Hyena still receives beast death buff");
+ }
+ static void Hunter(){HyenaLethalDeathrattleRegression();
   int before=checks;string[] ids={"CS2_237","DS1_070","DS1_183","DS1_184","DS1_188","EX1_531","EX1_536","EX1_537","EX1_538","EX1_544","EX1_549"};
   Check(ids.All(cardId=>matchRules.Supports(catalog.Card("VAN_"+cardId))),"All eleven remaining Hunter cards are registered");
   var hunterCards=catalog.Deckable(catalog.Pool("classic-2014")).Where(c=>c.CardClass=="HUNTER").ToArray();Check(hunterCards.Length==25&&hunterCards.All(matchRules.Supports),"All 25 classic Hunter cards are playable");

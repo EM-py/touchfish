@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.7.3",Date="2026-10-13";
- public static readonly string[] PatchNotes=new[]{"特效设置改为关、低、高：高包含低，并额外开启死亡之翼与炎爆术大动画；极简始终隐藏。","炎爆术在命中时才结算伤害，任一方选择高特效时统一等待；全屏震动阈值改为单次伤害大于9。","竞技选牌右侧显示己方已选卡牌，按费用排序、独立滚动；修复竞技场起手换牌点击。","随从沉默显示×状态，低或高且普通模式时为红色，关或极简时为中性色。","补充光明之泉回合开始治疗验证，保留办公窗口、经典382张牌与联机隐私。"};
+ public const string Version="v0.7.4",Date="2026-10-13";
+ public static readonly string[] PatchNotes=new[]{"修复希尔瓦娜斯与憎恶的亡语连锁：憎恶已造成致命伤害的随从不再进入随机偷取候选，女王只选择仍存活的敌方随从，避免有活目标时偷取落空。","修复镜像实体与公正之剑：先完成随从属性复制，再结算接收方的召唤增益；复制随从正确保留 +1/+1，武器只消耗一次耐久。战歌指挥官的冲锋与己方光环也按复制后的属性结算。","修复零攻击血吼配合英勇打击：借助英雄临时攻击力攻击随从时，血吼攻击力最低保持为零，不再降成负数；随后使用升级！正确获得 +1 攻击和 +1 耐久。","修复紫罗兰教师与飞刀杂耍者导致法术目标提前死亡的异常：飞刀先杀死目标后，神圣之灵、心灵之火、死亡缠绕等定向效果安全失效，不再访问已离场随从。法术仍消耗费用、计入本回合出牌，正常结算过载与施法后触发。","修复食腐土狼在憎恶亡语连锁中被错误救活：已受到致命伤害的土狼不再获得后续野兽死亡的 +2/+1；仍存活的土狼继续正常获得增益。","修复沉默后的新增法术伤害：被沉默的随从随后受到大法师战吼赋予的法术伤害 +1 时，加成正常生效；再次沉默会清除新增法强，公开快照与客户端保持一致。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.7.3",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.4",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.3","2026-10-13",new[]{"特效设置改为关、低、高：高包含低，并额外开启死亡之翼与炎爆术大动画；极简始终隐藏。","炎爆术在命中时才结算伤害，任一方选择高特效时统一等待；全屏震动阈值改为单次伤害大于9。","竞技选牌右侧显示己方已选卡牌，按费用排序、独立滚动；修复竞技场起手换牌点击。","随从沉默显示×状态，低或高且普通模式时为红色，关或极简时为中性色。","补充光明之泉回合开始治疗验证，保留办公窗口、经典382张牌与联机隐私。"}));
   body.Children.Add(ReleaseSection("v0.7.1","2026-10-13",new[]{"新增竞技模式：局域网连接成功后，双方各从随机提供的三个职业中选择一个。","每人连续进行 30 轮三选一选牌，候选牌来自全部中立牌与所选职业牌；选牌内容仅发送给本人，双方共构筑 30 张竞技卡组。","竞技对战采用三局两胜，单局结束后自动开始下一局，任一方先赢两局即结束系列赛；保留普通对战规则、起手换牌与断线保护。","经典旧世冻结卡池的 382 / 382 张牌均可用。","顶栏 test 可选择经典冰法 AI 或经典动物园 AI，正常一费开局、随机先后手，自动换牌和操作；保留原双人测试工具。","人机仅读取己方手牌与公开场面，不读取对手私牌或牌库顺序；普通与极简保持原窗口尺寸。"}));
   body.Children.Add(ReleaseSection("v0.7.0","2026-10-13",new[]{"经典旧世全卡支持：冻结经典池 382 / 382 张可组牌卡均可用。","诺兹多姆在场且未沉默时，双方回合 15 秒，到期由房主自动换边；无有效来源时不限时，普通、极简和特效开关均不影响。","红龙将选定英雄生命设为 15，保留护甲、身份和上限，不当作伤害或治疗。","开局前可输入玩家名称，双方名称同步到普通英雄面板、提示与共享记录；极简仍只显示血量。","保留办公外观、固定窗口、局域网隐私、倒计时选择状态与按需测试。"}));
   body.Children.Add(ReleaseSection("v0.5.4","2026-10-13",new[]{"补齐 29 张中立 3～6 费牌，经典池所有 3～6 费卡可用，总支持 380 / 382。","新增死亡后与出牌结算后公共触发，苦痛、教派领袖、食尸鬼、教师、加基森与伊利丹走独立规则注册。","无面显式深复制属性和附加效果；报警机器人交换不触发战吼；恐怖海盗按武器攻击动态减费。","格尔宾四种发明与酋长三种和弦全部可用，保持七槽上限、手牌隐私和冻结经典数值。","办公窗口与特效开关保持不变，专项检查可按 mid-cost / high-cost 选择。"}));

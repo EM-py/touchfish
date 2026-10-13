@@ -1,9 +1,39 @@
 ﻿using System;using System.Linq;using Touchfish;
 public static partial class RuleTests {
+ static void GorehowlAttackFloorRegression(){
+  var g=MatchFixture("WARRIOR");g.EquipRaw(0,"VAN_EX1_411",7,1,false);
+  for(int n=0;n<7;n++){var victim=g.Summon(1,"VAN_CS2_231");Check(g.Attack(0,0,new MatchTarget(1,victim.Id)).Success,"Gorehowl attacks down to zero");g.EndTurn();g.EndTurn();}
+  Check(g.Players[0].WeaponAttack==0&&g.Players[0].WeaponDurability==1,"Gorehowl zero attack retains durability");
+  Check(g.Play(0,Inject(g,"CS2_105")).Success,"Heroic Strike enables zero-attack weapon");
+  var target=g.Summon(1,"VAN_CS2_231");Check(g.Attack(0,0,new MatchTarget(1,target.Id)).Success&&g.Players[0].WeaponAttack==0&&g.Players[0].WeaponDurability==1,"Temporary attack cannot reduce Gorehowl below zero");
+  Check(g.Play(0,Inject(g,"EX1_409")).Success&&g.Players[0].WeaponAttack==1&&g.HeroAttack(0)==5&&g.Players[0].WeaponDurability==2,"Upgrade preserves full attack gain after assisted Gorehowl attack");
+ }
+ static void SylvanasLivingTargetRegression(){
+  for(int seed=0;seed<30;seed++){
+   var g=new MatchEngine(catalog,matchRules.TrainingDeck("MAGE"),matchRules.TrainingDeck("WARRIOR"),seed);g.MarkMulliganCompleteForTests();
+   foreach(var p in g.Players){p.Hand.Clear();p.Board.Clear();}
+   var abom=g.Summon(0,"VAN_EX1_097");var sylv=g.Summon(0,"VAN_EX1_016");g.Summon(1,"VAN_CS2_231");var yeti=g.Summon(1,"VAN_CS2_182");
+   abom.DamageTaken=abom.MaxHealth;sylv.DamageTaken=sylv.MaxHealth;g.Cleanup();
+   Check(g.Players[0].Board.Count==1&&g.Players[0].Board[0].Id==yeti.Id&&yeti.Health==3&&g.Players[1].Board.Count==0,"Sylvanas ignores Abomination's mortally wounded targets, seed "+seed);
+  }
+  var empty=MatchFixture();var dead=empty.Summon(1,"VAN_CS2_231");dead.DamageTaken=1;empty.StealRandomEnemyMinion(0);
+  Check(empty.Players[0].Board.Count==0&&empty.Players[1].Board.Contains(dead),"Steal with only dead targets does nothing");
+ }
+ static void MirrorSummonOrderRegression(){
+  var g=SecretFixture("EX1_294");g.EquipRaw(0,"VAN_EX1_366",1,5,false);Check(g.Play(1,Inject(g,"CS2_182",1)).Success,"Opponent triggers Mirror with Yeti");
+  var copy=g.Players[0].Board.Single();Check(g.AttackValue(copy)==5&&copy.Health==6&&g.Players[0].WeaponDurability==4,"Mirror copies before Sword of Justice buffs, consuming one durability");
+  Check(copy.Id!=g.Players[1].Board.Single().Id&&copy.Owner==0&&copy.SummonTurn==g.Turn,"Mirror keeps distinct instance and receiving owner");
+  g=SecretFixture("EX1_294");g.Summon(0,"VAN_EX1_084");
+  int card=Inject(g,"CS2_231",1);g.Play(1,card);copy=g.Players[0].Board.Single(u=>u.CardId=="VAN_CS2_231");
+  Check(copy.Charge,"Mirror receives Warsong charge after copy initialization");
+  g=SecretFixture("EX1_294");g.Summon(0,"VAN_EX1_084");g.Summon(1,"VAN_CS2_122");g.Play(1,Inject(g,"CS2_172",1));
+  copy=g.Players[0].Board.Single(u=>u.CardId=="VAN_CS2_172");
+  Check(g.AttackValue(copy)==3&&copy.Charge,"Mirror evaluates receiving-side aura instead of source aura");
+ }
  static MatchEngine SecretFixture(params string[] ids){var g=MatchFixture("MAGE","MAGE");foreach(var card in ids){g.Players[0].Mana=10;Check(g.Play(0,Inject(g,card)).Success,"Arm secret "+card);}g.EndTurn();foreach(var player in g.Players)player.Hand.Clear();g.Players[1].Mana=10;return g;}
  static MatchEngine MatchFixture(string first="MAGE",string second="WARRIOR"){var g=Game();g.Players[0].ClassId=first;g.Players[1].ClassId=second;return g;}
  static int Inject(MatchEngine g,string card,int seat=0){return Hand(g,card,seat);}
- static void LegacyWarrior(){var all=catalog.Deckable(catalog.Pool("classic-2014"));Check(all.Count(c=>c.CardClass=="WARRIOR")==25&&all.Where(c=>c.CardClass=="WARRIOR").All(c=>matchRules.Supports(c)),"All 25 Classic Warrior cards supported");
+ static void LegacyWarrior(){GorehowlAttackFloorRegression();var all=catalog.Deckable(catalog.Pool("classic-2014"));Check(all.Count(c=>c.CardClass=="WARRIOR")==25&&all.Where(c=>c.CardClass=="WARRIOR").All(c=>matchRules.Supports(c)),"All 25 Classic Warrior cards supported");
   var g=MatchFixture("WARRIOR");var body=g.Summon(1,"VAN_CS2_182");int ramp=Inject(g,"CS2_104");Check(!g.Play(0,ramp,new MatchTarget(1,body.Id)).Success&&g.Players[0].Mana==10,"Rampage rejects undamaged target atomically");g.Damage(new MatchTarget(1,body.Id),1);Check(g.Play(0,ramp,new MatchTarget(1,body.Id)).Success&&g.AttackValue(body)==7&&body.MaxHealth==8&&body.Health==7,"Rampage works on damaged enemy and retains damage");
   g=MatchFixture("WARRIOR");int cleave=Inject(g,"CS2_114");body=g.Summon(1,"VAN_CS2_182");Check(!g.Play(0,cleave).Success&&g.Players[0].Mana==10,"Cleave requires two enemies before spending");var other=g.Summon(1,"VAN_CS2_182");g.Summon(0,"VAN_EX1_563");Check(g.Play(0,cleave).Success&&g.Players[1].Board.Count==0&&g.Players[1].Health==30,"Cleave hits distinct minions with spell damage and excludes hero");
   g=MatchFixture("WARRIOR");body=g.Summon(0,"VAN_CS2_182");g.Damage(new MatchTarget(0,body.Id),1);g.Players[0].Armor=8;g.Play(0,Inject(g,"EX1_392"));Check(g.Players[0].Hand.Count==1,"Battle Rage ignores healthy armored hero");g.Players[0].Health=29;g.Players[0].Mana=10;g.Play(0,Inject(g,"EX1_392"));Check(g.Players[0].Hand.Count==3,"Battle Rage counts damaged hero and own minion");
@@ -20,7 +50,7 @@ public static partial class RuleTests {
   g=MatchFixture("WARRIOR");int brawl=Inject(g,"EX1_407");Check(!g.Play(0,brawl).Success&&g.Players[0].Mana==10,"Brawl requires two minions atomically");body=g.Summon(0,"VAN_EX1_556");other=g.Summon(1,"VAN_EX1_556");body.Shield=other.Shield=true;g.Play(0,brawl);Check(g.Players.Sum(p=>p.Board.Count)==2&&g.Graveyard.Count(e=>e.Reason==GraveyardReason.MinionDied)==1&&g.Players.SelectMany(p=>p.Board).Count(u=>u.CardId=="VAN_skele21")==1,"Brawl leaves one original survivor and does not kill deathrattle token");
   g=MatchFixture("WARRIOR");smith=g.Summon(0,"VAN_EX1_402");smith.DamageTaken=3;body=g.Summon(0,"VAN_CS2_182");g.DamageBatch(()=>{g.DamageSequenceStep(new MatchTarget(0,smith.Id),1);g.DamageSequenceStep(new MatchTarget(0,body.Id),1);});Check(g.Players[0].Armor==1,"Sequential hits remove dead damage listeners before next hit");g=MatchFixture("WARRIOR");smith=g.Summon(0,"VAN_EX1_402");smith.DamageTaken=3;g.Play(0,Inject(g,"EX1_320"),new MatchTarget(0,smith.Id));Check(g.Players[0].Armor==1&&!g.Players[0].Board.Contains(smith),"Effects with internal death cleanup flush lethal damage triggers first");
   }
- static void LegacySecrets(){Check(SecretRules.Ids.All(id=>matchRules.Supports(catalog.Card("VAN_"+id))),"All fifteen frozen Classic secrets supported");
+ static void LegacySecrets(){MirrorSummonOrderRegression();Check(SecretRules.Ids.All(id=>matchRules.Supports(catalog.Card("VAN_"+id))),"All fifteen frozen Classic secrets supported");
   var g=MatchFixture();int secret=Inject(g,"EX1_287");g.Play(0,secret);secret=Inject(g,"EX1_287");int mana=g.Players[0].Mana;Check(!g.Play(0,secret).Success&&g.Players[0].Mana==mana&&g.Players[0].SecretCount==1,"Duplicate secret rejected without spending");Check(!g.Log.Any(l=>l.Contains("法术反制")),"Secret casting log is anonymous");var wire=JsonData.Serializer().Serialize(LanProtocol.View(g,1,"secret-test",1));Check(!wire.Contains("VAN_EX1_287")&&!wire.Contains("法术反制"),"Hidden secret identity absent from opponent snapshot");foreach(var id in new[]{"EX1_289","EX1_294","EX1_295","EX1_594"}){g.Players[0].Mana=10;g.Play(0,Inject(g,id));}g.Players[0].Mana=10;secret=Inject(g,"tt_010");Check(!g.Play(0,secret).Success&&g.Players[0].Mana==10&&g.Players[0].SecretCount==5,"Sixth secret rejected atomically");
   g=SecretFixture("EX1_287");int spell=Inject(g,"CS2_029",1);Check(g.Play(1,spell,new MatchTarget(0)).Success&&g.Players[0].Health==30&&g.Players[1].Mana==6&&g.Players[0].SecretCount==0&&g.CardsPlayed==1,"Counterspell cancels effect while consuming spell, mana and played-card count");Check(g.Log.Any(l=>l.Contains("奥秘触发：法术反制")),"Triggered secret is publicly revealed");
   g=SecretFixture("tt_010");var target=g.Summon(0,"VAN_CS2_182");g.Play(1,Inject(g,"CS2_029",1),new MatchTarget(0,target.Id));Check(target.Health==5&&g.Players[0].Board.Count==1&&g.Players[0].SecretCount==0,"Spellbender redirects targeted spell to generated minion");g=SecretFixture("tt_010","EX1_287");target=g.Summon(0,"VAN_CS2_182");g.Play(1,Inject(g,"CS2_029",1),new MatchTarget(0,target.Id));Check(g.Players[0].Board.Count==2&&target.Health==5&&g.Players[0].SecretCount==0,"Spellbender before Counterspell follows secret order");g=SecretFixture("EX1_287","tt_010");target=g.Summon(0,"VAN_CS2_182");g.Play(1,Inject(g,"CS2_029",1),new MatchTarget(0,target.Id));Check(g.Players[0].Board.Count==1&&g.Players[0].SecretCount==1,"Counterspell before Spellbender stops later spell triggers");
@@ -123,7 +153,7 @@ public static partial class RuleTests {
   g=MatchFixture("SHAMAN");g.Summon(0,"VAN_EX1_563");g.Summon(1,"VAN_CS2_182");g.Summon(1,"VAN_CS2_182");fork=Inject(g,"EX1_251");g.Play(0,fork);Check(g.Players[1].Board.Count==0&&g.VisualEvents.Count(e=>e.Kind=="damage"&&e.Amount==7)==2,"Forked Lightning adds spell power separately to both hits");
   g=MatchFixture("SHAMAN");g.Players[0].Mana=0;TimedCostRules.GrantFreeSpells(g,0,g.Turn);g.Summon(1,"VAN_CS2_182");g.Summon(1,"VAN_CS2_182");fork=Inject(g,"EX1_251");Check(g.Play(0,fork).Success&&g.Players[0].Mana==0&&g.Players[0].Overload==2,"Zero-cost spell still applies its printed overload");
   }
- static void LegacyDeathrattle(){
+ static void LegacyDeathrattle(){SylvanasLivingTargetRegression();
   foreach(string id in new[]{"NEW1_021","EX1_097","EX1_534","EX1_577"})Check(matchRules.Supports(catalog.Card("VAN_"+id)),"Deathrattle batch supports "+id);
   var g=MatchFixture();var doom=g.Summon(0,"VAN_NEW1_021");var shield=g.Summon(1,"VAN_EX1_008");g.EndTurn();Check(g.Players[0].Board.Contains(doom)&&g.Players[1].Board.Contains(shield),"Doomsayer waits for its controller's turn start");g.EndTurn();Check(g.Players.All(p=>p.Board.Count==0)&&g.Players[0].Hand.Count==1,"Doomsayer destroys itself and both boards through Divine Shield before regular draw");
   g=MatchFixture();doom=g.Summon(0,"VAN_NEW1_021");g.Silence(new MatchTarget(0,doom.Id));shield=g.Summon(1,"VAN_EX1_008");g.EndTurn();g.EndTurn();Check(g.Players[0].Board.Count==1&&g.Players[1].Board.Count==1,"Silenced Doomsayer does not wipe board");
