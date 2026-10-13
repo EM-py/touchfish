@@ -11,8 +11,8 @@ public sealed class GameModeDefinition {
  }
 }
 public static class GameModes {
- public static readonly GameModeDefinition Classic=new GameModeDefinition("classic"),LocalTest=new GameModeDefinition("local-test",startingMana:10,requireCompleteDeck:false,allowTestTools:true);
- static readonly Dictionary<string,GameModeDefinition> modes=new Dictionary<string,GameModeDefinition>{{Classic.Id,Classic},{LocalTest.Id,LocalTest}};
+ public static readonly GameModeDefinition Classic=new GameModeDefinition("classic"),Arena=new GameModeDefinition("arena",validateDeck:ArenaDraftSession.Validate),LocalTest=new GameModeDefinition("local-test",startingMana:10,requireCompleteDeck:false,allowTestTools:true);
+ static readonly Dictionary<string,GameModeDefinition> modes=new Dictionary<string,GameModeDefinition>{{Classic.Id,Classic},{Arena.Id,Arena},{LocalTest.Id,LocalTest}};
  public static void Register(GameModeDefinition mode){if(mode==null||modes.ContainsKey(mode.Id))throw new ArgumentException("模式 ID 已存在或无效。");modes.Add(mode.Id,mode);}
  public static GameModeDefinition Get(string id){GameModeDefinition mode;if(!modes.TryGetValue(id,out mode))throw new ArgumentException("未知对战模式："+id);return mode;}
 }

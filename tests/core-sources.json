@@ -1,5 +1,6 @@
 ﻿[
   "AuraRules.cs",
+  "ArenaDraft.cs",
   "CardLibrary.cs",
   "ComboRules.cs",
   "ConditionalTriggerRules.cs",
