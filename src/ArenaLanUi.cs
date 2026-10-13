@@ -1,0 +1,40 @@
+﻿using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+
+namespace Touchfish {
+public partial class PanelWindow {
+ ComboBox lanModePicker;
+ FrameworkElement lanClassField,lanDeckField;
+ Grid arenaStage,arenaOfferGrid;
+ TextBlock arenaStageTitle,arenaStageProgress;
+ Button[] arenaOfferButtons;
+ ArenaDraftSession lanArenaDraft;
+ ArenaDraftView lanArenaView;
+ bool lanArenaMode;
+ string lanGuestName;
+ bool lanGuestEffectsEnabled;
+ int lanArenaWins0,lanArenaWins1,lanArenaGameNumber,lanArenaSeriesWinner=-2;
+
+ void SetArenaDraftLayout(bool active){if(lanPanel==null)return;double[] heights={31,48,42};for(int row=1;row<=3;row++){lanPanel.RowDefinitions[row].Height=new GridLength(active?0:heights[row-1]);foreach(System.Windows.UIElement child in lanPanel.Children)if(Grid.GetRow(child)==row)child.Visibility=active?Visibility.Collapsed:Visibility.Visible;}}
+ bool ArenaModeSelected(){var selected=lanModePicker==null?null:lanModePicker.SelectedItem as Choice;return selected!=null&&selected.Key=="arena";}
+ void UpdateLanModeFields(bool updateNotice=true){if(lanModePicker==null)return;bool arena=ArenaModeSelected();if(lanClassField!=null)lanClassField.Visibility=arena?Visibility.Collapsed:Visibility.Visible;if(lanDeckField!=null)lanDeckField.Visibility=arena?Visibility.Collapsed:Visibility.Visible;bool busy=lanPeer!=null;lanClass.IsEnabled=lanDeck.IsEnabled=!busy&&!arena;if(updateNotice&&!busy&&lanNotice!=null&&arenaStage!=null&&arenaStage.Visibility!=Visibility.Visible)lanNotice.Text="竞技模式：联机成功后，双方分别从随机 3 个职业中选 1 个，再各自进行 30 轮三选一。组牌完成后进行三局两胜。";else if(updateNotice&&!busy&&lanNotice!=null&&arenaStage!=null&&arenaStage.Visibility!=Visibility.Visible&&!arena)lanNotice.Text="双方连接同一局域网，各自选职业和卡组。一人创建房间，另一人填房主地址后加入。";}
+ void BuildArenaStage(){
+  arenaStage=new Grid{Visibility=Visibility.Collapsed};arenaStage.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});arenaStage.RowDefinitions.Add(new RowDefinition{Height=new GridLength(28)});arenaStage.RowDefinitions.Add(new RowDefinition{Height=new GridLength(1,GridUnitType.Star)});
+  arenaStageTitle=T("竞技模式",11,Ink);arenaStageTitle.TextWrapping=TextWrapping.Wrap;arenaStage.Children.Add(arenaStageTitle);arenaStageProgress=T("",9,Muted);Grid.SetRow(arenaStageProgress,1);arenaStage.Children.Add(arenaStageProgress);arenaOfferGrid=new Grid();for(int i=0;i<3;i++)arenaOfferGrid.ColumnDefinitions.Add(new ColumnDefinition());arenaOfferButtons=new Button[3];for(int i=0;i<3;i++){int index=i;var content=new StackPanel();var name=T("",10,Ink);name.TextAlignment=TextAlignment.Center;name.TextWrapping=TextWrapping.Wrap;content.Children.Add(name);var detail=T("",8,Muted);detail.TextAlignment=TextAlignment.Center;detail.TextWrapping=TextWrapping.Wrap;content.Children.Add(detail);var button=Btn("",24);button.Content=new ScrollViewer{Content=content,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};button.Width=Double.NaN;button.HorizontalAlignment=HorizontalAlignment.Stretch;button.Height=Double.NaN;button.VerticalAlignment=VerticalAlignment.Stretch;button.Margin=new Thickness(i==0?0:3,1,i==2?0:3,0);button.Padding=new Thickness(3);button.Click+=(s,e)=>PickArenaChoice(index);button.IsEnabled=false;Grid.SetColumn(button,i);arenaOfferGrid.Children.Add(button);arenaOfferButtons[i]=button;}Grid.SetRow(arenaOfferGrid,2);arenaStage.Children.Add(arenaOfferGrid);
+ }
+ void StartArenaDraft(string opponentName,bool opponentEffects){lanGuestName=PlayerNames.Normalize(opponentName,1);lanGuestEffectsEnabled=opponentEffects;lanArenaDraft=new ArenaDraftSession(catalog,Environment.TickCount,matchRules.Supports);lanSession=lanArenaDraft.Session;lanArenaView=lanArenaDraft.View(0);lanArenaWins0=lanArenaWins1=0;lanArenaGameNumber=0;lanArenaSeriesWinner=-2;lanNotice.Visibility=Visibility.Collapsed;UpdateArenaDraftUi(lanArenaView);PublishArenaDraftToGuest();status.Text="竞技模式 · 选择职业与卡牌";}
+ void PublishArenaDraftToGuest(){if(lanPeer==null||lanArenaDraft==null)return;var message=new LanMessage{Kind="arena-draft",ArenaDraft=lanArenaDraft.View(1)};if(!lanPeer.Send(message))DisconnectLan("竞技选牌状态发送失败。");}
+ void UpdateArenaDraftUi(ArenaDraftView view){if(view==null||arenaStage==null)return;SetArenaDraftLayout(true);lanNotice.Visibility=Visibility.Collapsed;arenaStage.Visibility=Visibility.Visible;string[] options=view.Choices??new string[0];if(view.Phase=="class")arenaStageTitle.Text="选择职业 · 从随机的 3 个职业中选 1 个";else if(view.Phase=="cards")arenaStageTitle.Text="竞技组牌 · "+ArenaClassLabel(view.ClassId)+" · 第 "+(view.Picks+1)+" / 30 次选择";else arenaStageTitle.Text="已完成 30 张竞技卡组，等待对手";arenaStageProgress.Text="你的进度 "+view.Picks+" / 30 · 对手 "+view.OpponentPicks+" / 30"+(view.OpponentComplete?" · 对手已完成":"");for(int i=0;i<arenaOfferButtons.Length;i++){var button=arenaOfferButtons[i];if(i>=options.Length){button.Visibility=Visibility.Collapsed;button.IsEnabled=false;continue;}button.Visibility=Visibility.Visible;button.IsEnabled=!lanWaiting&&!view.Complete;var content=(StackPanel)((ScrollViewer)button.Content).Content;var name=(TextBlock)content.Children[0];var detail=(TextBlock)content.Children[1];if(view.Phase=="class"){name.Text=ArenaClassLabel(options[i]);detail.Text="选择该职业";button.ToolTip=name.Text;}else{var card=catalog.Card(options[i]);name.Text=card.Cost+" 费 · "+card.Name;detail.Text=(card.Type=="MINION"?card.Attack+"/"+card.Health+" 随从":card.Type=="WEAPON"?"武器 "+card.Attack+"/"+card.Durability:"法术")+"\n"+(card.Text.Length>0?card.Text:"无特殊效果");button.ToolTip=card.Name+" · "+card.Text;}}status.Text=lanWaiting?"选项已提交，等待服务器确认。":view.Complete?"竞技组牌完成，等待对手。":"竞技模式 · "+(view.Phase=="class"?"选择职业":"选择卡牌");}
+ string ArenaClassLabel(string id){var item=Classes.FirstOrDefault(c=>c.Key==id);return item==null?id:item.Label;}
+ void PickArenaChoice(int index){if(!lanArenaMode||lanArenaView==null||lanWaiting||lanArenaView.Complete)return;if(index<0||index>2||index>=(lanArenaView.Choices==null?0:lanArenaView.Choices.Length))return;if(lanIsHost){try{lanArenaDraft.Pick(0,lanArenaView.Session,lanArenaView.Revision,index);lanArenaView=lanArenaDraft.View(0);UpdateArenaDraftUi(lanArenaView);if(lanArenaDraft.View(0).Complete&&lanArenaDraft.View(1).Complete){StartArenaMatch();return;}PublishArenaDraftToGuest();}catch(InvalidOperationException ex){status.Text=ex.Message;}}else{lanWaiting=true;UpdateArenaDraftUi(lanArenaView);if(lanPeer==null||!lanPeer.Send(new LanMessage{Kind="arena-pick",ArenaSession=lanArenaView.Session,ArenaRevision=lanArenaView.Revision,ChoiceIndex=index})){DisconnectLan("发送竞技选择失败。");}}}
+ void StartArenaMatch(){if(lanArenaDraft==null||!lanArenaDraft.View(0).Complete||!lanArenaDraft.View(1).Complete)return;var host=lanArenaDraft.Deck(0);var guest=lanArenaDraft.Deck(1);int? startingSeat=null;
+#if VERIFY
+  startingSeat=VerificationRun.FirstSeat;
+#endif
+  lanAuthority=new LanHostGame(catalog,host,guest,Environment.TickCount,startingSeat,lanChosenName,lanGuestName,GameModes.Arena);lanAuthority.SetPresentation(0,fullEffects&&!minimal);lanAuthority.SetPresentation(1,lanGuestEffectsEnabled);match=lanAuthority.Game;lanSession=lanAuthority.Session;lanRevision=0;lanReady=true;lanWaiting=false;matchViewSeat=0;awaitHandoff=false;ClearPending();inspectMatch=false;matchHandScroll=0;lanArenaGameNumber=lanAuthority.ArenaGameNumber;lanArenaWins0=lanArenaWins1=0;lanArenaSeriesWinner=-2;lanArenaView=null;SetArenaDraftLayout(false);arenaStage.Visibility=Visibility.Collapsed;lanNotice.Visibility=Visibility.Visible;PublishLan();RenderMatch();ShowPage("match");status.Text="竞技模式 · 卡组完成，进行三局两胜";}
+ string ArenaSeriesLabel(){if(!lanArenaMode)return null;if(lanAuthority!=null)return lanAuthority.ArenaScoreLabel();string end=lanArenaSeriesWinner==-2?" · 第 "+lanArenaGameNumber+" 局":lanArenaSeriesWinner==-1?" · 系列赛平局":" · 系列赛结束";return lanArenaWins0+" - "+lanArenaWins1+end;}
+}
+}
