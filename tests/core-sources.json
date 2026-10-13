@@ -35,5 +35,7 @@
   "ShamanRules.cs",
   "HeroReplacementRules.cs",
   "LowCostRules.cs",
-  "HunterRules.cs"
+  "HunterRules.cs",
+  "MidCostRules.cs",
+  "HighCostRules.cs"
 ]
