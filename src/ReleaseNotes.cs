@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.5.4",Date="2026-10-13";
- public static readonly string[] PatchNotes=new[]{"补齐 29 张中立 3～6 费牌，经典池所有 3～6 费卡可用，总支持 380 / 382。","新增死亡后与出牌结算后公共触发，苦痛、教派领袖、食尸鬼、教师、加基森与伊利丹走独立规则注册。","无面显式深复制属性和附加效果；报警机器人交换不触发战吼；恐怖海盗按武器攻击动态减费。","格尔宾四种发明与酋长三种和弦全部可用，保持七槽上限、手牌隐私和冻结经典数值。","办公窗口与特效开关保持不变，专项检查可按 mid-cost / high-cost 选择。"};
+ public const string Version="v0.7.0",Date="2026-10-13";
+ public static readonly string[] PatchNotes=new[]{"经典旧世全卡支持：冻结经典池 382 / 382 张可组牌卡均可用。","诺兹多姆在场且未沉默时，双方回合 15 秒，到期由房主自动换边；无有效来源时不限时，普通、极简和特效开关均不影响。","红龙将选定英雄生命设为 15，保留护甲、身份和上限，不当作伤害或治疗。","开局前可输入玩家名称，双方名称同步到普通英雄面板、提示与共享记录；极简仍只显示血量。","保留办公外观、固定窗口、局域网隐私、倒计时选择状态与按需测试。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.5.4",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.0",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.5.4","2026-10-13",new[]{"补齐 29 张中立 3～6 费牌，经典池所有 3～6 费卡可用，总支持 380 / 382。","新增死亡后与出牌结算后公共触发，苦痛、教派领袖、食尸鬼、教师、加基森与伊利丹走独立规则注册。","无面显式深复制属性和附加效果；报警机器人交换不触发战吼；恐怖海盗按武器攻击动态减费。","格尔宾四种发明与酋长三种和弦全部可用，保持七槽上限、手牌隐私和冻结经典数值。","办公窗口与特效开关保持不变，专项检查可按 mid-cost / high-cost 选择。"}));
   body.Children.Add(ReleaseSection("v0.5.3","2026-10-12",new[]{"补齐 12 张中立 1 / 2 费牌，兼容合并猎人职业牌，总支持 351 / 382。","猎人经典 25 / 25 可用：追踪术私下选牌、野兽召唤与死亡、武器和法术效果；保留当前奥秘与扩展接口。","新增角色治疗、召唤后与施法后公共触发，包含飞刀、炎术师、圣光护卫者、魔瘾者等；战吼和触发按阶段结算。","狂野怒火攻击与免疫在回合结束失效；追踪候选只给本人，不泄露到共享记录。"}));
   body.Children.Add(ReleaseSection("v0.5.2","2026-10-12",new[]{"法师、圣骑士、萨满和术士各 25 / 25 张经典职业牌可用，总支持 328 / 382。","补齐冰锥术、安东尼达斯、肯瑞托法师、法力浮龙、公正之剑、先祖之魂、视界术、妖术等剩余效果。","加拉克苏斯替换为 15 血上限、3/8 血怒和地狱火技能；英雄与技能接口独立，指定登场台词仅普通且特效全开显示。","先祖之魂接入公共附加亡语，按位置和施加顺序结算；变形不触发召唤，保持手牌隐私、办公窗口与按需测试。"}));
   body.Children.Add(ReleaseSection("v0.5.1","2026-10-12",new[]{"经典牧师全部 25 张职业牌可用，总支持 314 / 382；补齐复制、控场、北郡、光明之泉、光耀之子、奥金尼、维伦、暗影形态与圣殿执行者。","治疗按来源统一结算，维伦翻倍法术和技能，奥金尼转换治疗；偷来的职业随从和武器可在对局使用，组牌仍绑定职业。","局域网随机决定先后手，固定己方视角保留；起手、幸运币、首回合抽牌与法力按实际先后手分配。","暗影步保持回手减两费、重新打出后清除的原规则；不跨登场累计。"}));

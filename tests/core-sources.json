@@ -37,5 +37,7 @@
   "LowCostRules.cs",
   "HunterRules.cs",
   "MidCostRules.cs",
-  "HighCostRules.cs"
+  "HighCostRules.cs",
+  "TurnClockRules.cs",
+  "PlayerNames.cs"
 ]

@@ -110,6 +110,7 @@ public sealed class MatchRules {
   foreach(var trigger in HighCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in HighCostRules.CardIds.Concat(HighCostRules.Inventions))Register(id,"NONE",HighCostRules.Apply);
   Register("EX1_002","ENEMY_TAUNT_MINION",HighCostRules.Apply);Register("EX1_283","ANY_CHARACTER",HighCostRules.Apply);Register("EX1_564","MINION",HighCostRules.Apply);
   Register("GAME_I_AM_MURLOC","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);Register("GAME_ROGUES_DO_IT","ANY_CHARACTER",HighCostRules.Apply);Register("PRO_001c","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
+  Register("EX1_560","NONE",c=>{});Register("EX1_561","HERO",ClassicDragonRules.Alexstrasza);
   RuleModules.Configure(this);
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}

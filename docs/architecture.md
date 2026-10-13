@@ -94,3 +94,11 @@
 ## 中立 5 / 6 费牌
 
 HighCostRules 注册 11 张中立牌、四种发明和三种和弦，规则与 TCP 范围为 high-cost。CardResolved 在出牌效果与清场后通知出牌前的生存监听者，含反制法术；非法出牌无事件，新登场伊利丹不响应自身。CopyFaceless 显式深复制后恢复新实体、控制者、入场元数据，清除临时控制返还。辅助牌来源见 docs/classic-auxiliary-cards.md，未改动冻结组牌数据。
+
+## 规则回合钟
+
+TurnClockRules 与 WPF 特效分离，使用可注入的单调 ClockNowMs。来源只识别经典 EX1_560 效果键，扩展同名 BaseId 不自动继承。TurnClockSequence 和 TurnClockRemainingMs 显式加入 LanState；ReadView 构造显示副本并限制重复快照延长，只有 LanHostGame.PollTimeout 能推进权威回合与 Revision。过期动作由 Act 在费用和手牌变更前拒绝，EndTurn 仍允许超时推进。UI DispatcherTimer 始终工作，只更新标签，实际结束回合才清 pending；断线不推进、现有动画锁不绕过。纯规则用可控时钟验证，无需等待十五秒；dragons 的 TCP 范围验证正常 / 极简、特效开关、快照去重、自动换边与红龙设血量。
+
+## 玩家名称
+
+PlayerNames 统一校验长度、控制字符、空白默认名，PlayerLabel 处理同名编号。构造 MatchEngine 时在初始抽牌日志之前设置名称；LAN hello 只提交本方名称，由房主通过固定席位绑定，PublicPlayerState.DisplayName 显式加入白名单。名称不属于卡组或英雄身份，不随先后手或英雄替换改变。日志在产生时直接格式化名称，历史保持原样；公开视觉事件仍按席位同步，渲染器由只读提供器取得本局名称。names 检查验证固定窗口输入、同名、默认、同步与隐私。
