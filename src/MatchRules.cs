@@ -105,6 +105,11 @@ public sealed class MatchRules {
   foreach(var trigger in LowCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in LowCostRules.Triggers.Select(t=>t.CardId).Distinct())Register(id,"NONE",c=>{});
   Register("CS2_146","NONE",c=>{});Register("EX1_049","FRIENDLY_MINION",LowCostRules.Apply);Register("EX1_059","MINION",LowCostRules.Apply);
   foreach(string id in new[]{"EX1_082","NEW1_016","NEW1_018","NEW1_025"})Register(id,"NONE",LowCostRules.Apply);
+  foreach(var trigger in MidCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in MidCostRules.CardIds)Register(id,"NONE",MidCostRules.Apply);
+  Register("EX1_005","ATTACK_SEVEN",MidCostRules.Apply);Register("EX1_057","FRIENDLY_MINION",MidCostRules.Apply);Register("GAME_BANANA","MINION",c=>c.Game.Buff(c.Target,1,1));
+  foreach(var trigger in HighCostRules.Triggers)RegisterTrigger(trigger);foreach(string id in HighCostRules.CardIds.Concat(HighCostRules.Inventions))Register(id,"NONE",HighCostRules.Apply);
+  Register("EX1_002","ENEMY_TAUNT_MINION",HighCostRules.Apply);Register("EX1_283","ANY_CHARACTER",HighCostRules.Apply);Register("EX1_564","MINION",HighCostRules.Apply);
+  Register("GAME_I_AM_MURLOC","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);Register("GAME_ROGUES_DO_IT","ANY_CHARACTER",HighCostRules.Apply);Register("PRO_001c","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
   RuleModules.Configure(this);
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}
