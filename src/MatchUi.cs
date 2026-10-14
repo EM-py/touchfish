@@ -15,7 +15,7 @@ public partial class PanelWindow {
  Dictionary<int,FrameworkElement> handCardVisuals=new Dictionary<int,FrameworkElement>();TextBlock deckCountText;
  double matchHandScroll;ScrollViewer liveHandScroll;bool choosePosition;List<Button> placementButtons=new List<Button>();
  void BuildMatchUi(){
-  lobbyPanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};foreach(var height in new double[]{24,31,50,50,-1,28})lobbyPanel.RowDefinitions.Add(new RowDefinition{Height=height<0?new GridLength(1,GridUnitType.Star):new GridLength(height)});Put(shell,lobbyPanel,4);var localHeading=new Grid();localHeading.Children.Add(T("本地练习",12,Ink));BuildAgentPicker(localHeading);lobbyPanel.Children.Add(localHeading);
+  lobbyPanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};foreach(var height in new double[]{24,31,50,50,-1,28})lobbyPanel.RowDefinitions.Add(new RowDefinition{Height=height<0?new GridLength(1,GridUnitType.Star):new GridLength(height)});Put(shell,lobbyPanel,4);var localHeading=new Grid();localHeading.Children.Add(T("本地 test",12,Ink));lobbyPanel.Children.Add(localHeading);
   Put(lobbyPanel,LocalNames(),1);
   var players=new Grid();players.ColumnDefinitions.Add(new ColumnDefinition());players.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(8)});players.ColumnDefinitions.Add(new ColumnDefinition());
   myClass=Picker(Classes);opponentClass=Picker(Classes);myClass.SelectedItem=Classes.First(c=>c.Key==draft.ClassId);opponentClass.SelectedItem=Classes.First(c=>c.Key=="WARRIOR");players.Children.Add(LobbyField("玩家 1",myClass));var second=LobbyField("玩家 2",opponentClass);Grid.SetColumn(second,2);players.Children.Add(second);Put(lobbyPanel,players,2);

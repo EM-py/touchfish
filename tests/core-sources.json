@@ -18,6 +18,7 @@
   "MatchAnimationGate.cs",
   "SpellAnimationRules.cs",
   "MatchEngine.cs",
+  "TargetResolutionRules.cs",
   "MatchRules.cs",
   "MatchVisualEvents.cs",
   "MinionSpeechRules.cs",

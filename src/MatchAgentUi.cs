@@ -5,18 +5,26 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 namespace Touchfish {
 public partial class PanelWindow {
- ComboBox localOpponentMode;DispatcherTimer agentTimer;IMatchAgent localAgent;bool agentMatch;
+ ComboBox localOpponentMode;DispatcherTimer agentTimer;IMatchAgent localAgent;bool agentMatch,agentLobbyMode;
  int agentTurn=-1,agentActions;string agentSession;
  void BuildAgentPicker(Grid heading){
-  localOpponentMode=Picker(new[]{new Choice("test","双人 test")}.Concat(MatchAgents.All.Select(d=>new Choice(d.Id,d.Name))).ToArray());localOpponentMode.SelectedIndex=0;localOpponentMode.Width=112;localOpponentMode.Height=22;localOpponentMode.HorizontalAlignment=HorizontalAlignment.Right;localOpponentMode.FontSize=10;heading.Children.Add(localOpponentMode);localOpponentMode.SelectionChanged+=(s,e)=>RefreshAgentLobby();
+  localOpponentMode=Picker(MatchAgents.All.Select(d=>new Choice(d.Id,d.Name)).ToArray());localOpponentMode.SelectedIndex=0;localOpponentMode.Height=22;localOpponentMode.HorizontalAlignment=HorizontalAlignment.Stretch;localOpponentMode.FontSize=10;heading.Children.Add(LobbyField("对手",localOpponentMode));localOpponentMode.SelectionChanged+=(s,e)=>{RefreshAgentLobby();UpdateLanModeFields();};
   agentTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(350)};agentTimer.Tick+=(s,e)=>TickAgent();agentTimer.Start();Closed+=(s,e)=>agentTimer.Stop();
  }
  LocalAgentDefinition ChosenAgent(){return localOpponentMode!=null&&localOpponentMode.SelectedItem is Choice?MatchAgents.Find(((Choice)localOpponentMode.SelectedItem).Key):null;}
- bool AgentSelected(){return ChosenAgent()!=null;}
+ bool AgentSelected(){return agentLobbyMode&&ChosenAgent()!=null;}
+ bool HumanAiSelected(){var selected=lanModePicker==null?null:lanModePicker.SelectedItem as Choice;return selected!=null&&selected.Key=="ai";}
+ void StartHumanAiMatch(){
+  if(lanPeer!=null||lanMode){status.Text="请先离开局域网房间。";return;}
+  try{var definition=ChosenAgent();if(definition==null)throw new InvalidOperationException("请选择人机对手。");
+   var first=LobbyDeck(lanClass,lanDeck,true);agentLobbyMode=true;myName.Text=lanName.Text;
+   ConfigureLocalOpponent(first,definition.Deck(catalog));localTest=true;testTakeOpen=emoteOpen=false;selectedMulligan.Clear();matchViewSeat=0;matchHandScroll=0;awaitHandoff=false;ClearPending();inspectMatch=false;RenderMatch();ShowPage("match");Record("开始"+AgentName()+"人机对局");
+  }catch(Exception ex){if(!(ex is InvalidOperationException||ex is System.IO.InvalidDataException))throw;lanNotice.Text=ex.Message;}
+ }
  string AgentName(){return match==null?"人机":match.PlayerLabel(1);}
- void RefreshAgentLobby(){if(opponentClass==null||opponentDeck==null||opponentName==null||lobbyNotice==null)return;var definition=ChosenAgent();bool ai=definition!=null;opponentDeck.ItemsSource=ai?new[]{new Choice(definition.Id+"-ai",definition.Name.Replace(" AI","")+" · 固定30张")}:myDeck.ItemsSource;opponentDeck.SelectedIndex=0;if(ai){opponentClass.SelectedItem=Classes.First(c=>c.Key==definition.ClassId);opponentName.Text=definition.Name;}opponentDeck.IsEnabled=opponentName.IsEnabled=!ai;SyncChosenDeckClass(opponentClass,opponentDeck);lobbyNotice.Text=ai?"对手使用"+definition.Name+"。双方按正常规则开局，随机先后手，需要完整 30 张卡组。AI 只读取己方手牌与公开场面，自动换牌和操作。":"本地双人轮流操作。无需满 30 张；双方开局 10 个满水晶，可从剩余牌库指定取牌。仅用于 test。";}
+ void RefreshAgentLobby(){if(opponentClass==null||opponentDeck==null||opponentName==null||lobbyNotice==null)return;var definition=AgentSelected()?ChosenAgent():null;bool ai=definition!=null;opponentDeck.ItemsSource=ai?new[]{new Choice(definition.Id+"-ai",definition.Name.Replace(" AI","")+" · 固定30张")}:myDeck.ItemsSource;opponentDeck.SelectedIndex=0;if(ai){opponentClass.SelectedItem=Classes.First(c=>c.Key==definition.ClassId);opponentName.Text=definition.Name;}opponentDeck.IsEnabled=opponentName.IsEnabled=!ai;SyncChosenDeckClass(opponentClass,opponentDeck);lobbyNotice.Text=ai?"对手使用"+definition.Name+"。双方按正常规则开局，随机先后手，需要完整 30 张卡组。AI 只读取己方手牌与公开场面，自动换牌和操作。":"本地双人轮流操作。无需满 30 张；双方开局 10 个满水晶，可从剩余牌库指定取牌。仅用于 test。";}
  void ConfigureLocalOpponent(DeckDocument first,DeckDocument second){
-  var definition=ChosenAgent();bool ai=definition!=null;IMatchAgent nextAgent=ai?definition.Create():null;int seed=Environment.TickCount;
+  var definition=AgentSelected()?ChosenAgent():null;bool ai=definition!=null;IMatchAgent nextAgent=ai?definition.Create():null;int seed=Environment.TickCount;
   var next=new MatchEngine(catalog,first,second,seed,!ai,startingSeat:ai?new Random(seed).Next(2):0,firstName:myName.Text,secondName:ai?definition.Name:opponentName.Text);
   if(ai){var result=next.Mulligan(1,nextAgent.Mulligan(AgentBridge.Observe(next,1)));if(!result.Success)throw new InvalidOperationException(result.Message);}match=next;agentMatch=ai;localAgent=nextAgent;agentTurn=-1;agentActions=0;agentSession=match.VisualSession;
  }
