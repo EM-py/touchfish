@@ -2,6 +2,7 @@
   "SchemaVersion": 1,
   "Id": "classic-2014",
   "Name": "经典 2014",
+  "DisplayName": "经典旧世",
   "Version": "VANILLA-253932",
   "Cards": [
     {

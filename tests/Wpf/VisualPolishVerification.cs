@@ -7,8 +7,24 @@ using System.Windows.Media;
 namespace Touchfish {
 public partial class PanelWindow {
  TextBlock StatLabel(int seat,int id,int column){var border=(Border)visualTargets[VisualKey(seat,id)];return (TextBlock)((Grid)border.Child).Children[column];}
+ void VerifyAttackGreenThemes(string folder){
+  LeaveLan();match=MatchFixture();matchViewSeat=0;awaitHandoff=false;ClearPending();ApplyMode(false);
+  var permanent=match.Summon(0,"VAN_CS2_182");match.Buff(new MatchTarget(0,permanent.Id),2,0);
+  var temporary=match.Summon(0,"VAN_CS2_182");temporary.TempAttack=2;var auraOnly=match.Summon(0,"VAN_CS2_182");match.Summon(0,"VAN_CS2_122");var plain=match.Summon(1,"VAN_CS2_182");
+  ShowPage("match");
+  foreach(string theme in new[]{"wps","codex-light","codex-dark"}){
+   ApplyTheme(theme!="wps",theme=="codex-dark");
+   foreach(var level in new[]{EffectLevel.Low,EffectLevel.High}){
+    SetEffectsLevel(level);RenderMatch();
+    foreach(var body in new[]{permanent,temporary,auraOnly}){var color=((SolidColorBrush)StatLabel(0,body.Id,0).Foreground).Color;Check(color.G>color.R&&color.G>color.B,"Rendered permanent, temporary and aura attack stays green: "+theme+"/"+level);}
+    Check(StatLabel(1,plain.Id,0).Foreground==Ink,"Unbuffed attack remains neutral: "+theme+"/"+level);
+   }
+   Render(Path.Combine(folder,"attack-green-"+theme+".png"));SetEffectsLevel(EffectLevel.Off);RenderMatch();Check(StatLabel(0,permanent.Id,0).Foreground==Ink,"Effects off hides attack color: "+theme);
+   SetEffectsLevel(EffectLevel.Low);ApplyMode(true);RenderMatch();Check(StatLabel(0,permanent.Id,0).Foreground==Ink,"Minimal hides attack color: "+theme);ApplyMode(false);
+  }
+ }
  public void PreviewVisualPolishScope(string folder){
-  previewRun=true;Directory.CreateDirectory(folder);int before=checks;LeaveLan();match=MatchFixture();matchViewSeat=0;awaitHandoff=false;ClearPending();ApplyTheme(true,true);ApplyMode(false);SetFullEffects(true);
+  previewRun=true;Directory.CreateDirectory(folder);int before=checks;VerifyAttackGreenThemes(folder);LeaveLan();match=MatchFixture();matchViewSeat=0;awaitHandoff=false;ClearPending();ApplyTheme(true,true);ApplyMode(false);SetFullEffects(true);
   var buffed=match.Summon(0,"VAN_CS2_182");match.Buff(new MatchTarget(0,buffed.Id),2,0);match.Damage(new MatchTarget(0,buffed.Id),2);var equality=match.Summon(0,"VAN_CS2_182");match.Damage(new MatchTarget(0,equality.Id),2);match.SetHealth(new MatchTarget(0,equality.Id),1);ShowPage("match");RenderMatch();
   Check(((SolidColorBrush)StatLabel(0,buffed.Id,0).Foreground).Color==(Color)ColorConverter.ConvertFromString("#85BC91"),"Rendered buffed attack is green with extras");
   Check(((SolidColorBrush)StatLabel(0,buffed.Id,2).Foreground).Color==(Color)ColorConverter.ConvertFromString("#D78B86"),"Rendered damaged health is red with extras");

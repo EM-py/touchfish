@@ -47,5 +47,10 @@
   "MatchAgent.cs",
   "FreezeMageAgent.cs",
   "FreezeMageDefense.cs",
-  "ZooWarlockAgent.cs"
+  "ZooWarlockAgent.cs",
+  "MiracleRogueDeck.cs",
+  "MiracleRogueAgent.cs",
+  "MiracleBurstPlanner.cs",
+  "MiracleTurnPlanner.cs",
+  "MiracleDrawOdds.cs"
 ]

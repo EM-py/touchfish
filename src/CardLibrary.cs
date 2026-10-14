@@ -10,7 +10,8 @@ public sealed class CardRecord {
  public int DbfId,LegacyDbfId,Cost,Attack,Health,Durability,Overload,SpellDamage;
  public bool Collectible;public string[] Mechanics,Entourage;
 }
-public sealed class CardSetPackage {public int SchemaVersion;public string Id,Name,Version;public CardRecord[] Cards;}
+public sealed class CardSetPackage {public int SchemaVersion;public string Id,Name,Version,DisplayName;public CardRecord[] Cards;}
+public sealed class CardSetInfo {public string Id,Name,Version;}
 public sealed class PoolDefinition {
  public string Id,Name;public string[] CardSetIds;public int DeckSize,CopyLimit,LegendaryLimit,DeckstringFormat;
  public Dictionary<string,int> HeroDbfIds;
@@ -29,12 +30,14 @@ public static class JsonData {
 public sealed class CardCatalog {
  public readonly Dictionary<string,CardRecord> Cards=new Dictionary<string,CardRecord>();
  public readonly Dictionary<int,CardRecord> ByDbf=new Dictionary<int,CardRecord>();
+ public readonly List<CardSetInfo> Sets=new List<CardSetInfo>();
  public readonly List<PoolDefinition> Pools=new List<PoolDefinition>();
  public CardCatalog(ICardSetSource source,PoolFile poolFile){
   if(poolFile.SchemaVersion!=1||poolFile.Pools==null)throw new InvalidDataException("不支持的卡池配置版本。");
   var setIds=new HashSet<string>();
   foreach(var package in source.Load()){
    if(package.SchemaVersion!=1||package.Cards==null||!setIds.Add(package.Id))throw new InvalidDataException("牌库版本或 ID 无效。");
+   Sets.Add(new CardSetInfo{Id=package.Id,Name=String.IsNullOrWhiteSpace(package.DisplayName)?(String.IsNullOrWhiteSpace(package.Name)?package.Id:package.Name):package.DisplayName,Version=package.Version});
    foreach(var card in package.Cards){
     if(String.IsNullOrWhiteSpace(card.Id)||String.IsNullOrWhiteSpace(card.Name)||card.SetId!=package.Id||Cards.ContainsKey(card.Id))throw new InvalidDataException("卡牌 ID 或所属牌库无效。");
     Cards.Add(card.Id,card);if(card.Collectible){if(card.DbfId<=0||ByDbf.ContainsKey(card.DbfId))throw new InvalidDataException("卡牌 DBF ID 重复。");ByDbf.Add(card.DbfId,card);}
@@ -47,6 +50,7 @@ public sealed class CardCatalog {
  }
  public static CardCatalog Load(string root){return new CardCatalog(new JsonDirectoryCardSetSource(Path.Combine(root,"data","cardsets")),JsonData.Read<PoolFile>(Path.Combine(root,"data","pools.json")));}
  public List<CardRecord> Deckable(PoolDefinition pool){return Cards.Values.Where(c=>c.Collectible&&pool.CardSetIds.Contains(c.SetId)&&(c.Type=="MINION"||c.Type=="SPELL"||c.Type=="WEAPON")).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
+ public List<CardRecord> BrowseDeckable(string setId=null){if(!String.IsNullOrEmpty(setId)&&!Sets.Any(s=>s.Id==setId))throw new InvalidDataException("未知卡牌版本："+setId);return Cards.Values.Where(c=>c.Collectible&&(String.IsNullOrEmpty(setId)||c.SetId==setId)&&(c.Type=="MINION"||c.Type=="SPELL"||c.Type=="WEAPON")).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
  public CardRecord Card(string id){CardRecord card;if(!Cards.TryGetValue(id,out card))throw new InvalidDataException("未知卡牌："+id);return card;}
  public PoolDefinition Pool(string id){var pool=Pools.FirstOrDefault(p=>p.Id==id);if(pool==null)throw new InvalidDataException("未知卡池："+id);return pool;}
 }

@@ -1,4 +1,4 @@
-# 卡牌数据与扩展接口
+﻿# 卡牌数据与扩展接口
 
 内置卡池 `classic-2014` 对应经典模式的 2014 年 6 月 / 1.0.0.5832 基准。使用 HearthstoneJSON 冻结的 `VANILLA` 版本，而不是当前 `LEGACY` 版本。暴雪规则依据：https://hearthstone.blizzard.com/en-us/news/23620129/introducing-the-core-set-and-classic-format
 
@@ -41,3 +41,9 @@ https://api.hearthstonejson.com/v1/253932/zhCN/cards.json
 `Touchfish.exe --preview previews` 检查界面、卡池、组牌限制、代码、保存、失败导入不修改当前卡组，以及扩展接口。
 
 `powershell -ExecutionPolicy Bypass -File scripts/fetch_reference.ps1` 获取 HearthSim 参考实现，然后 `python scripts/verify_reference.py` 执行独立代码核对。
+
+## 卡牌版本查看
+
+卡牌包可增加可选的 DisplayName（例如“经典旧世”或“纳克萨玛斯”）。组牌页版本列表自动读取每个已加载包的 Id、DisplayName/Name 和 Version；缺少 DisplayName 时回退 Name，不需要修改UI代码。只有真实加载的包才显示，不为未导入内容预设空版本。
+
+“全部版本”浏览所有已加载包中的可组牌记录；单独选择版本只过滤牌库视图，可与搜索、费用、类型和职业筛选组合。卡组仍绑定顶部所选卡池，版本筛选不改变、清空或保存卡组。卡池外的牌可看详情，加入按钮禁用；pools.json 的 CardSetIds 决定哪些版本可混合组牌。经典池保持仅 classic-2014，纳克萨玛斯应作为独立包，再新增独立的经典加纳克卡池。未实现效果仍由 MatchRules.Supports 标记。

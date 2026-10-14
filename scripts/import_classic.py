@@ -52,7 +52,7 @@ def main():
             "Entourage": c.get("entourage", []), "Overload": c.get("overload", 0),
             "SpellDamage": spell_damage(c),
         })
-    package = {"SchemaVersion": 1, "Id": "classic-2014", "Name": "经典 2014", "Version": f"VANILLA-{BUILD}",
+    package = {"SchemaVersion": 1, "Id": "classic-2014", "Name": "经典 2014", "DisplayName": "经典旧世", "Version": f"VANILLA-{BUILD}",
                "Cards": sorted(normalized, key=lambda c: c["Id"])}
     out = ROOT / "data" / "cardsets" / "classic-2014.json"
     out.write_text(json.dumps(package, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -1,0 +1,27 @@
+﻿using System;using System.Linq;using System.IO;using System.Collections.Generic;using System.Windows.Controls;
+namespace Touchfish {public partial class PanelWindow {
+ public void PreviewCardSetsScope(string folder){
+  previewRun=true;Directory.CreateDirectory(folder);int before=checks;var original=catalog;var originalDraft=draft;
+  string fixture=Path.Combine(folder,"set-fixture");Directory.CreateDirectory(fixture);
+  foreach(string source in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"data/cardsets"),"*.json"))File.Copy(source,Path.Combine(fixture,Path.GetFileName(source)),true);
+  var card=new CardRecord{Id="TEST_SET_CARD",BaseId="TEST_SET_CARD",DbfId=9000711,SetId="test-naxx",Name="版本筛选测试随从",Text="测试牌，不是正式纳克萨玛斯卡牌。",CardClass="NEUTRAL",Type="MINION",Collectible=true,Rarity="COMMON",Cost=1,Attack=1,Health=1,EffectId="test:unimplemented@1"};
+  JsonData.Write(Path.Combine(fixture,"test-naxx.json"),new CardSetPackage{SchemaVersion=1,Id="test-naxx",Name="测试包",DisplayName="纳克萨玛斯（测试）",Version="test-1",Cards=new[]{card}});
+  var classic=original.Pool("classic-2014");var expanded=new PoolDefinition{Id="test-combined",Name="测试合并卡池",CardSetIds=new[]{"classic-2014","test-naxx"},DeckSize=30,CopyLimit=2,LegendaryLimit=1,DeckstringFormat=3,HeroDbfIds=classic.HeroDbfIds};
+  try{
+   catalog=new CardCatalog(new JsonDirectoryCardSetSource(fixture),new PoolFile{SchemaVersion=1,Pools=new[]{classic,expanded}});draft=new DeckDocument{ClassId="MAGE",PoolId=classic.Id};draft.Cards["VAN_CS2_029"]=1;RefreshVersionPicker();RefreshDeck();showAllCards.IsChecked=true;searchBox.Text="";
+   Check(catalog.Sets.Count==2&&catalog.Sets.Single(s=>s.Id=="test-naxx").Name=="纳克萨玛斯（测试）","Version choices use package display metadata");
+   Check(catalog.BrowseDeckable().Count==383&&catalog.Deckable(classic).Count==382,"All loaded sets are browsable while classic stays frozen");
+   Check(filteredCards.Count==383,"All versions shows both packages");
+   var copy=draft.Copy();versionPicker.SelectedItem=versionPicker.Items.Cast<Choice>().First(c=>c.Key=="test-naxx");
+   Check(filteredCards.Count==1&&filteredCards[0].Id==card.Id,"Version filter restricts to extension cards");Check(SameDeck(draft,copy),"Changing version filter never prunes or replaces deck");
+   var row=(Border)collectionRows.Children[0];var plus=((Grid)row.Child).Children.OfType<Button>().Single();Check(!plus.IsEnabled&&plus.ToolTip.ToString().Contains("卡池外"),"Outside-pool card cannot be added despite browsing");
+   ShowDeckCard(card);Check(cardInfo.Text.Contains("纳克萨玛斯")&&cardInfo.Text.Contains("暂不可用")&&cardInfo.Text.Contains("卡池外"),"Details keep version, effect support and pool status distinct");
+   searchBox.Text="找不到";Check(filteredCards.Count==0,"Search intersects version filter");searchBox.Text="测试";Check(filteredCards.Count==1,"Search finds extension card");searchBox.Text="";costPicker.SelectedItem=costPicker.Items.Cast<Choice>().First(c=>c.Key=="2");Check(filteredCards.Count==0,"Cost intersects version filter");costPicker.SelectedIndex=0;
+   Check(DeckRules.CanAdd(catalog,new DeckDocument{PoolId=expanded.Id,ClassId="MAGE"},card)==null&&DeckRules.CanAdd(catalog,draft,card)!=null,"Expanded pool alone permits expanded card");
+   ApplyTheme(true,true);ApplyMode(false);ShowPage("deck");Render(Path.Combine(folder,"version-extension-normal.png"));ApplyMode(true);Render(Path.Combine(folder,"version-extension-minimal.png"));Check(Width==392&&Height==300&&versionPicker.ActualWidth>=80,"Version selector fits minimal window without expansion");
+   versionPicker.SelectedItem=versionPicker.Items.Cast<Choice>().First(c=>c.Key=="classic-2014");Check(filteredCards.Count==382&&filteredCards.All(c=>c.SetId=="classic-2014"),"Classic-only view excludes extension");Render(Path.Combine(folder,"version-classic-minimal.png"));
+  }finally{catalog=original;draft=originalDraft;showAllCards.IsChecked=false;searchBox.Text="";RefreshVersionPicker();RefreshDeck();}
+  Check(versionPicker.Items.Cast<Choice>().All(c=>c.Key!="test-naxx")&&catalog.Cards.Count==original.Cards.Count,"Fixture never enters production catalog");
+  File.WriteAllText(Path.Combine(folder,"card-sets-verification.txt"),"PASS: "+(checks-before)+" checks; package metadata, all/set filter, search/cost intersection, pool isolation, fixed normal/minimal WPF. No real user data or clipboard writes.");
+ }
+}}

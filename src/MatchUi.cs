@@ -60,7 +60,9 @@ public partial class PanelWindow {
    if((pending=="attack"&&pendingId==unit.Id))border.Background=B("#EDF4F0");else if(seat==matchViewSeat&&match.CanAttack(seat,unit)==null)border.BorderBrush=B("#A5B9AC");border.MouseLeftButtonDown+=(s,e)=>ClickMatchTarget(new MatchTarget(seat,unit.Id));
   }return strip;
  }
- System.Windows.Media.Brush UnitAttackBrush(BattleUnit unit){return fullEffects&&!minimal&&match.AttackValue(unit)>unit.BaseAttack?B(codex&&dark?"#85BC91":"#387C60"):Ink;}
+ // Semantic combat colors must not share the office-theme palette green, which Codex maps to gray.
+ System.Windows.Media.Brush AttackBonusBrush(){var brush=new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(codex&&dark?"#85BC91":"#387C60"));brush.Freeze();return brush;}
+ System.Windows.Media.Brush UnitAttackBrush(BattleUnit unit){return fullEffects&&!minimal&&match.AttackValue(unit)>unit.BaseAttack?AttackBonusBrush():Ink;}
  System.Windows.Media.Brush UnitHealthBrush(BattleUnit unit){return fullEffects&&!minimal&&unit.DamageTaken>0&&unit.Health<unit.MaxHealth?B(codex&&dark?"#D78B86":"#B04B46"):Ink;}
  System.Windows.Media.Brush FrozenMarkerBrush(){return B(codex&&dark?"#8FCBD8":"#3F859D");}
  TextBlock ColoredUnitTags(BattleUnit unit){var text=T("",9,Muted);var tags=UnitTags(unit).Split(' ');for(int i=0;i<tags.Length;i++){if(i>0)text.Inlines.Add(new Run(" "));var run=new Run(tags[i]);if(fullEffects&&!minimal&&match.IsEnraged(unit)&&(tags[i]=="激怒"||tags[i]=="激"))run.Foreground=B(codex&&dark?"#D78B86":"#B04B46");if(fullEffects&&!minimal&&unit.Frozen&&tags[i]=="冻结")run.Foreground=FrozenMarkerBrush();text.Inlines.Add(run);}return text;}
