@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Windows;
@@ -218,7 +218,7 @@ public partial class PanelWindow : Window {
   foreach(Border slot in heroSlots){var stack=(StackPanel)slot.Child;var title=(TextBlock)stack.Children[0];var meta=(TextBlock)stack.Children[1];var entry=(Entry)slot.Tag;title.Text=minimal?(entry.Kind=="英雄"?entry.Health.ToString():entry.Kind=="武器"?"武":"技"):slotLabels[slot][0];title.TextAlignment=minimal?TextAlignment.Center:entry.Kind=="英雄"?TextAlignment.Center:TextAlignment.Left;meta.Visibility=minimal?Visibility.Collapsed:Visibility.Visible;meta.Margin=new Thickness(0,2,0,0);}
   foreach(var crystal in crystals){crystal.Width=crystal.Height=minimal?8:10;crystal.Margin=new Thickness(minimal?1:2,0,0,0);}
   detailHeader.Height=detailBack.Height=minimal?12:15;detailBack.FontSize=minimal?9:11;detailMeta.Visibility=minimal?Visibility.Collapsed:Visibility.Visible;detail.Margin=minimal?new Thickness(4,0,4,0):new Thickness(8,2,8,2);detailText.Margin=new Thickness(0,minimal?0:2,0,0);detailText.LineHeight=minimal?11:double.NaN;detailBorder.Margin=minimal?new Thickness(0,0,0,0):new Thickness(0,2,0,4);
-  RebuildBattle();RebuildHand();ApplyFonts(shell);UpdateSettingButtons();ApplyDeckMode();if(lanArenaView!=null)UpdateArenaDraftUi(lanArenaView);if(match!=null)RenderMatch();ShowPage(currentPage);status.Text=minimal?"极简 · 未连接":"视觉预览 · 未连接";
+  RebuildBattle();RebuildHand();ApplyFonts(shell);UpdateSettingButtons();ApplyDeckMode();if(lanArenaView!=null)UpdateArenaDraftUi(lanArenaView);if(sealedView!=null&&sealedStage!=null&&sealedStage.Visibility==Visibility.Visible)RenderSealed(false);if(match!=null)RenderMatch();ShowPage(currentPage);status.Text=minimal?"极简 · 未连接":"视觉预览 · 未连接";
  }
  void RebuildHand(){foreach(var card in handCards)rows.Remove(card);handCards.Clear();main.Children.Remove(handLane);lanes.Clear();handLane=Lane(new Entry[]{new Entry("火球术","法术",4,0,0,"造成6点伤害。","","法术"),new Entry("寒冰箭","法术",2,0,0,"造成3点伤害，并冻结目标。","","法术"),new Entry("酸性沼泽软泥怪","战吼",2,3,2,"战吼：摧毁对手的武器。",""),new Entry("石拳食人魔","—",6,6,7,"","")},"手牌  4    /    牌库  16",true);Put(main,handLane,6);handLane.Visibility=details?Visibility.Collapsed:Visibility.Visible;Panel.SetZIndex(detailBorder,1);RefreshSelection();}
  void ApplyFonts(DependencyObject root){Walk(root,node=>{var text=node as TextBlock;if(text!=null&&text.Tag is double){text.FontSize=Math.Max(9,(double)text.Tag-(minimal?.5:0));text.FontWeight=FontWeights.Normal;}});}

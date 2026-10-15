@@ -1,7 +1,10 @@
-﻿using System;using System.Linq;using System.IO;using System.Collections.Generic;using System.Windows.Controls;
+using System;using System.Linq;using System.IO;using System.Collections.Generic;using System.Windows.Controls;
 namespace Touchfish {public partial class PanelWindow {
  public void PreviewCardSetsScope(string folder){
   previewRun=true;Directory.CreateDirectory(folder);int before=checks;var original=catalog;var originalDraft=draft;
+  Check(poolPicker.Items.Cast<Choice>().All(c=>c.Key!="classic-2014")&&versionPicker.Items.Cast<Choice>().All(c=>c.Key!="naxxramas-balance-2014"),"Archived Classic pool and internal balance set are absent from selectors");var displayed=catalog.BrowseForPool(catalog.Pool("naxxramas-2014"),"classic-2014");Check(displayed.Count==382&&displayed.Any(c=>c.Id=="NAX_EX1_536"&&c.FriendlySecretsOnly)&&displayed.All(c=>c.Id!="VAN_EX1_536"),"Classic origin filter shows only updated card versions");
+  draft=new DeckDocument{ClassId="MAGE",PoolId="naxxramas-2014",Name="纳克萨玛斯卡库"};SyncDeckControls();RefreshDeck();showAllCards.IsChecked=true;versionPicker.SelectedItem=versionPicker.Items.Cast<Choice>().First(c=>c.Key=="naxxramas-2014");Check(filteredCards.Count==30&&filteredCards.All(c=>!matchRules.Supports(c)),"Real Naxx package displays 30 explicitly unavailable cards");ShowDeckCard(catalog.Card("FP1_030"));Check(cardInfo.Text.Contains("暂不可用"),"Real Naxx details show unsupported effect marker");ApplyTheme(true,true);ApplyMode(false);ShowPage("deck");Render(Path.Combine(folder,"naxx-library-normal.png"));ApplyMode(true);Render(Path.Combine(folder,"naxx-library-minimal.png"));ApplyMode(false);versionPicker.SelectedIndex=0;draft=originalDraft;SyncDeckControls();
+  draft=new DeckDocument{ClassId="HUNTER",PoolId="classic-2014"};draft.Cards["VAN_EX1_536"]=2;SwitchDeckPool("naxxramas-2014");PruneDeck();Check(draft.Count==2&&draft.Cards.ContainsKey("NAX_EX1_536"),"Switching era preserves bow copies while selecting the revised version");SwitchDeckPool("classic-2014");PruneDeck();Check(draft.Count==2&&draft.Cards.ContainsKey("VAN_EX1_536"),"Switching back restores pure Classic bow without losing deck copies");draft=originalDraft;
   string fixture=Path.Combine(folder,"set-fixture");Directory.CreateDirectory(fixture);
   foreach(string source in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"data/cardsets"),"*.json"))File.Copy(source,Path.Combine(fixture,Path.GetFileName(source)),true);
   var card=new CardRecord{Id="TEST_SET_CARD",BaseId="TEST_SET_CARD",DbfId=9000711,SetId="test-naxx",Name="版本筛选测试随从",Text="测试牌，不是正式纳克萨玛斯卡牌。",CardClass="NEUTRAL",Type="MINION",Collectible=true,Rarity="COMMON",Cost=1,Attack=1,Health=1,EffectId="test:unimplemented@1"};
@@ -9,9 +12,9 @@ namespace Touchfish {public partial class PanelWindow {
   var classic=original.Pool("classic-2014");var expanded=new PoolDefinition{Id="test-combined",Name="测试合并卡池",CardSetIds=new[]{"classic-2014","test-naxx"},DeckSize=30,CopyLimit=2,LegendaryLimit=1,DeckstringFormat=3,HeroDbfIds=classic.HeroDbfIds};
   try{
    catalog=new CardCatalog(new JsonDirectoryCardSetSource(fixture),new PoolFile{SchemaVersion=1,Pools=new[]{classic,expanded}});draft=new DeckDocument{ClassId="MAGE",PoolId=classic.Id};draft.Cards["VAN_CS2_029"]=1;RefreshVersionPicker();RefreshDeck();showAllCards.IsChecked=true;searchBox.Text="";
-   Check(catalog.Sets.Count==2&&catalog.Sets.Single(s=>s.Id=="test-naxx").Name=="纳克萨玛斯（测试）","Version choices use package display metadata");
-   Check(catalog.BrowseDeckable().Count==383&&catalog.Deckable(classic).Count==382,"All loaded sets are browsable while classic stays frozen");
-   Check(filteredCards.Count==383,"All versions shows both packages");
+   Check(catalog.Sets.Count==original.Sets.Count+1&&catalog.Sets.Single(s=>s.Id=="test-naxx").Name=="纳克萨玛斯（测试）","Version choices use package display metadata");
+   Check(catalog.BrowseDeckable().Count==original.BrowseDeckable().Count+1&&catalog.Deckable(classic).Count==382,"All loaded sets are browsable while classic stays frozen");
+   Check(filteredCards.Count==catalog.BrowseForPool(classic).Count,"All versions shows both packages");
    var copy=draft.Copy();versionPicker.SelectedItem=versionPicker.Items.Cast<Choice>().First(c=>c.Key=="test-naxx");
    Check(filteredCards.Count==1&&filteredCards[0].Id==card.Id,"Version filter restricts to extension cards");Check(SameDeck(draft,copy),"Changing version filter never prunes or replaces deck");
    var row=(Border)collectionRows.Children[0];var plus=((Grid)row.Child).Children.OfType<Button>().Single();Check(!plus.IsEnabled&&plus.ToolTip.ToString().Contains("卡池外"),"Outside-pool card cannot be added despite browsing");

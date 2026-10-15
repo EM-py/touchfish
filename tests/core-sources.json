@@ -1,4 +1,4 @@
-﻿[
+[
   "AuraRules.cs",
   "ArenaDraft.cs",
   "CardLibrary.cs",
@@ -52,5 +52,6 @@
   "MiracleRogueAgent.cs",
   "MiracleBurstPlanner.cs",
   "MiracleTurnPlanner.cs",
-  "MiracleDrawOdds.cs"
+  "MiracleDrawOdds.cs",
+  "SealedRules.cs"
 ]

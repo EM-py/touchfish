@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -8,13 +8,16 @@ namespace Touchfish {
 public sealed class CardRecord {
  public string EffectId;public string Id,BaseId,Name,Text,RawText,CardClass,Type,Rarity,SetId,Race;
  public int DbfId,LegacyDbfId,Cost,Attack,Health,Durability,Overload,SpellDamage;
- public bool Collectible;public string[] Mechanics,Entourage;
+ public bool Collectible,FriendlySecretsOnly;public string[] Mechanics,Entourage;
 }
-public sealed class CardSetPackage {public int SchemaVersion;public string Id,Name,Version,DisplayName;public CardRecord[] Cards;}
-public sealed class CardSetInfo {public string Id,Name,Version;}
+public sealed class CardSetPackage {public int SchemaVersion;public string Id,Name,Version,DisplayName;public bool HiddenInBrowser;public CardRecord[] Cards;}
+public sealed class CardSetInfo {public string Id,Name,Version;public bool HiddenInBrowser;}
 public sealed class PoolDefinition {
  public string Id,Name;public string[] CardSetIds;public int DeckSize,CopyLimit,LegendaryLimit,DeckstringFormat;
  public Dictionary<string,int> HeroDbfIds;
+ public Dictionary<string,string> CardReplacements;
+ public bool Archived;
+ public bool Contains(CardRecord card){return CardSetIds.Contains(card.SetId)&&(CardReplacements==null||!CardReplacements.ContainsKey(card.Id));}
 }
 public sealed class PoolFile {public int SchemaVersion;public PoolDefinition[] Pools;}
 public interface ICardSetSource {IEnumerable<CardSetPackage> Load();}
@@ -37,7 +40,7 @@ public sealed class CardCatalog {
   var setIds=new HashSet<string>();
   foreach(var package in source.Load()){
    if(package.SchemaVersion!=1||package.Cards==null||!setIds.Add(package.Id))throw new InvalidDataException("牌库版本或 ID 无效。");
-   Sets.Add(new CardSetInfo{Id=package.Id,Name=String.IsNullOrWhiteSpace(package.DisplayName)?(String.IsNullOrWhiteSpace(package.Name)?package.Id:package.Name):package.DisplayName,Version=package.Version});
+   Sets.Add(new CardSetInfo{Id=package.Id,Name=String.IsNullOrWhiteSpace(package.DisplayName)?(String.IsNullOrWhiteSpace(package.Name)?package.Id:package.Name):package.DisplayName,Version=package.Version,HiddenInBrowser=package.HiddenInBrowser});
    foreach(var card in package.Cards){
     if(String.IsNullOrWhiteSpace(card.Id)||String.IsNullOrWhiteSpace(card.Name)||card.SetId!=package.Id||Cards.ContainsKey(card.Id))throw new InvalidDataException("卡牌 ID 或所属牌库无效。");
     Cards.Add(card.Id,card);if(card.Collectible){if(card.DbfId<=0||ByDbf.ContainsKey(card.DbfId))throw new InvalidDataException("卡牌 DBF ID 重复。");ByDbf.Add(card.DbfId,card);}
@@ -46,11 +49,15 @@ public sealed class CardCatalog {
   // Legacy IDs are aliases only; frozen VANILLA values always remain authoritative.
   foreach(var card in Cards.Values.Where(c=>c.Collectible&&c.LegacyDbfId>0))if(!ByDbf.ContainsKey(card.LegacyDbfId))ByDbf.Add(card.LegacyDbfId,card);
   foreach(var pool in poolFile.Pools){if(Pools.Any(p=>p.Id==pool.Id)||pool.DeckSize<=0||pool.DeckSize>100||pool.CopyLimit<1||pool.LegendaryLimit<1||pool.HeroDbfIds==null||pool.CardSetIds.Any(s=>!setIds.Contains(s)))throw new InvalidDataException("卡池配置无效。");Pools.Add(pool);}
+  foreach(var pool in Pools)if(pool.CardReplacements!=null)foreach(var pair in pool.CardReplacements){CardRecord original,replacement;if(!Cards.TryGetValue(pair.Key,out original)||!Cards.TryGetValue(pair.Value,out replacement)||original.BaseId!=replacement.BaseId||!pool.CardSetIds.Contains(original.SetId)||!pool.Contains(replacement)||!original.Collectible||!replacement.Collectible)throw new InvalidDataException("卡池替代卡牌配置无效。");}
   if(Pools.Count==0)throw new InvalidDataException("没有可用卡池。");
  }
  public static CardCatalog Load(string root){return new CardCatalog(new JsonDirectoryCardSetSource(Path.Combine(root,"data","cardsets")),JsonData.Read<PoolFile>(Path.Combine(root,"data","pools.json")));}
- public List<CardRecord> Deckable(PoolDefinition pool){return Cards.Values.Where(c=>c.Collectible&&pool.CardSetIds.Contains(c.SetId)&&(c.Type=="MINION"||c.Type=="SPELL"||c.Type=="WEAPON")).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
+ public List<CardRecord> Deckable(PoolDefinition pool){return Cards.Values.Where(c=>c.Collectible&&pool.Contains(c)&&(c.Type=="MINION"||c.Type=="SPELL"||c.Type=="WEAPON")).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
+ public CardRecord ResolveDbf(PoolDefinition pool,int dbf){return Deckable(pool).FirstOrDefault(c=>c.DbfId==dbf||c.LegacyDbfId>0&&c.LegacyDbfId==dbf)??ResolveReplacedDbf(pool,dbf);}
+ CardRecord ResolveReplacedDbf(PoolDefinition pool,int dbf){if(pool.CardReplacements==null)return null;foreach(var pair in pool.CardReplacements){var old=Card(pair.Key);if(old.DbfId==dbf||old.LegacyDbfId>0&&old.LegacyDbfId==dbf)return Card(pair.Value);}return null;}
  public List<CardRecord> BrowseDeckable(string setId=null){if(!String.IsNullOrEmpty(setId)&&!Sets.Any(s=>s.Id==setId))throw new InvalidDataException("未知卡牌版本："+setId);return Cards.Values.Where(c=>c.Collectible&&(String.IsNullOrEmpty(setId)||c.SetId==setId)&&(c.Type=="MINION"||c.Type=="SPELL"||c.Type=="WEAPON")).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
+ public List<CardRecord> BrowseForPool(PoolDefinition pool,string setId=null){return BrowseDeckable(setId).Where(c=>!Sets.First(s=>s.Id==c.SetId).HiddenInBrowser).Select(c=>pool.CardReplacements!=null&&pool.CardReplacements.ContainsKey(c.Id)?Card(pool.CardReplacements[c.Id]):c).GroupBy(c=>c.Id).Select(g=>g.First()).OrderBy(c=>c.Cost).ThenBy(c=>c.Name,StringComparer.Ordinal).ToList();}
  public CardRecord Card(string id){CardRecord card;if(!Cards.TryGetValue(id,out card))throw new InvalidDataException("未知卡牌："+id);return card;}
  public PoolDefinition Pool(string id){var pool=Pools.FirstOrDefault(p=>p.Id==id);if(pool==null)throw new InvalidDataException("未知卡池："+id);return pool;}
 }
@@ -62,7 +69,7 @@ public sealed class DeckDocument {
 }
 public static class DeckRules {
  public static string CanAdd(CardCatalog catalog,DeckDocument deck,CardRecord card){
-  var pool=catalog.Pool(deck.PoolId);if(!card.Collectible||!pool.CardSetIds.Contains(card.SetId)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON"))return "这张牌不能加入当前卡池。";
+  var pool=catalog.Pool(deck.PoolId);if(!card.Collectible||!pool.Contains(card)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON"))return "这张牌不能加入当前卡池。";
   if(card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId)return "只能加入本职业或中立卡牌。";
   if(deck.Count>=pool.DeckSize)return "卡组已满。";int count;deck.Cards.TryGetValue(card.Id,out count);int max=card.Rarity=="LEGENDARY"?pool.LegendaryLimit:pool.CopyLimit;
   if(count>=max)return (card.Rarity=="LEGENDARY"?"同一传说卡":"同一卡牌")+"最多 "+max+" 张。";return null;
@@ -71,7 +78,7 @@ public static class DeckRules {
   if(deck==null||deck.SchemaVersion!=1||deck.Cards==null)throw new InvalidDataException("卡组文件格式无效。");var pool=catalog.Pool(deck.PoolId);
   if(!pool.HeroDbfIds.ContainsKey(deck.ClassId))throw new InvalidDataException("该职业不属于当前卡池。");
   if(deck.Cards.Count>pool.DeckSize)throw new InvalidDataException("卡组条目过多。");
-  foreach(var pair in deck.Cards){var card=catalog.Card(pair.Key);if(!card.Collectible||!pool.CardSetIds.Contains(card.SetId)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON"))throw new InvalidDataException("卡组包含当前卡池以外的卡牌。");if(card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId)throw new InvalidDataException("卡组包含其他职业的卡牌。");int max=card.Rarity=="LEGENDARY"?pool.LegendaryLimit:pool.CopyLimit;if(pair.Value<=0||pair.Value>max)throw new InvalidDataException(card.Name+" 的数量不合法。");}
+  foreach(var pair in deck.Cards){var card=catalog.Card(pair.Key);if(!card.Collectible||!pool.Contains(card)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON"))throw new InvalidDataException("卡组包含当前卡池以外的卡牌。");if(card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId)throw new InvalidDataException("卡组包含其他职业的卡牌。");int max=card.Rarity=="LEGENDARY"?pool.LegendaryLimit:pool.CopyLimit;if(pair.Value<=0||pair.Value>max)throw new InvalidDataException(card.Name+" 的数量不合法。");}
   if(deck.Count>pool.DeckSize||complete&&deck.Count!=pool.DeckSize)throw new InvalidDataException("完整卡组需要 "+pool.DeckSize+" 张牌，当前 "+deck.Count+" 张。");
  }
 }
@@ -94,7 +101,7 @@ public static class DeckCode {
  public static DeckDocument Decode(CardCatalog catalog,string input,string poolId){
   var raw=DecodeRaw(input);var pool=catalog.Pool(poolId);if(raw.Format!=pool.DeckstringFormat&&raw.Format!=1&&raw.Format!=2)throw new InvalidDataException("代码模式不属于当前卡池。");var hero=pool.HeroDbfIds.FirstOrDefault(p=>p.Value==raw.Hero);if(hero.Key==null)throw new InvalidDataException("无法识别经典英雄。");var deck=new DeckDocument{ClassId=hero.Key,PoolId=poolId,Name="导入卡组"};
   var title=input.Split(new char[]{'\r','\n'}).FirstOrDefault(s=>s.Trim().StartsWith("### "));if(title!=null)deck.Name=title.Trim().Substring(4).Trim();
-  foreach(var pair in raw.Cards){CardRecord card;if(!catalog.ByDbf.TryGetValue(pair.Key,out card))throw new InvalidDataException("代码含有未知或非经典卡牌："+pair.Key);if(deck.Cards.ContainsKey(card.Id))throw new InvalidDataException("代码同时包含同一卡的两个版本。");deck.Cards.Add(card.Id,pair.Value);}DeckRules.Validate(catalog,deck,true);return deck;
+  foreach(var pair in raw.Cards){CardRecord card=catalog.ResolveDbf(pool,pair.Key);if(card==null)throw new InvalidDataException("代码含有未知或非经典卡牌："+pair.Key);if(deck.Cards.ContainsKey(card.Id))throw new InvalidDataException("代码同时包含同一卡的两个版本。");deck.Cards.Add(card.Id,pair.Value);}DeckRules.Validate(catalog,deck,true);return deck;
  }
  static void Write(Stream stream,int number){if(number<0)throw new InvalidDataException("代码数值不能为负。");uint value=(uint)number;do{byte next=(byte)(value&127);value>>=7;if(value!=0)next|=128;stream.WriteByte(next);}while(value!=0);}
  static int Read(Stream stream){uint value=0;for(int shift=0;shift<35;shift+=7){int next=stream.ReadByte();if(next<0)throw new InvalidDataException("代码被截断。");if(shift==28&&(next&248)!=0)throw new InvalidDataException("代码数值溢出。");value|=(uint)(next&127)<<shift;if((next&128)==0)return checked((int)value);}throw new InvalidDataException("无效的变长整数。");}

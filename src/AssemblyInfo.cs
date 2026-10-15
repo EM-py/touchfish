@@ -1,6 +1,6 @@
 using System.Reflection;
 [assembly: AssemblyTitle("Touchfish")]
 [assembly: AssemblyProduct("Touchfish")]
-[assembly: AssemblyVersion("0.7.8.0")]
-[assembly: AssemblyFileVersion("0.7.8.0")]
-[assembly: AssemblyInformationalVersion("0.7.8")]
+[assembly: AssemblyVersion("0.7.9.0")]
+[assembly: AssemblyFileVersion("0.7.9.0")]
+[assembly: AssemblyInformationalVersion("0.7.9")]

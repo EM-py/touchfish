@@ -1,4 +1,4 @@
-﻿# 卡牌数据与扩展接口
+# 卡牌数据与扩展接口
 
 内置卡池 `classic-2014` 对应经典模式的 2014 年 6 月 / 1.0.0.5832 基准。使用 HearthstoneJSON 冻结的 `VANILLA` 版本，而不是当前 `LEGACY` 版本。暴雪规则依据：https://hearthstone.blizzard.com/en-us/news/23620129/introducing-the-core-set-and-classic-format
 
@@ -47,3 +47,9 @@ https://api.hearthstonejson.com/v1/253932/zhCN/cards.json
 卡牌包可增加可选的 DisplayName（例如“经典旧世”或“纳克萨玛斯”）。组牌页版本列表自动读取每个已加载包的 Id、DisplayName/Name 和 Version；缺少 DisplayName 时回退 Name，不需要修改UI代码。只有真实加载的包才显示，不为未导入内容预设空版本。
 
 “全部版本”浏览所有已加载包中的可组牌记录；单独选择版本只过滤牌库视图，可与搜索、费用、类型和职业筛选组合。卡组仍绑定顶部所选卡池，版本筛选不改变、清空或保存卡组。卡池外的牌可看详情，加入按钮禁用；pools.json 的 CardSetIds 决定哪些版本可混合组牌。经典池保持仅 classic-2014，纳克萨玛斯应作为独立包，再新增独立的经典加纳克卡池。未实现效果仍由 MatchRules.Supports 标记。
+
+## 纳克萨玛斯与历史修订
+
+纳克萨玛斯使用独立的 `naxxramas-2014.json`（30张新卡与5张召唤辅助牌）与 `naxxramas-balance-2014.json`（修订鹰角弓）。新卡池截止2014年8月全部区域开放，共412张；纯经典382张原文件保留。`CardReplacements` 指定同一旧牌在目标卡池中的替代版本；卡组代码按目标卡池解析，组牌不能同时加入旧版和修订版。
+
+运行 `python scripts/import_naxxramas.py --offline` 可从固定快照重建；原始摘录与历史范围见 `sources/naxxramas-source.json`、`sources/naxxramas-provenance.json` 和 [导入说明](../docs/naxxramas-import.md)。纳克萨玛斯效果尚未实现，明确标记暂不可用并阻止开局。竞技与现有人机仍使用纯经典。

@@ -36,6 +36,6 @@ public static class HunterRules {
  static void Unleash(EffectContext c){int count=c.Game.Players[1-c.Seat].Board.Count;for(int i=0;i<count&&c.Game.Players[c.Seat].Board.Count<c.Game.Mode.BoardSlots;i++)c.Game.Summon(c.Seat,"GAME_HOUND");}
  static void Flare(EffectContext c){foreach(var unit in c.Game.Players.SelectMany(p=>p.Board))unit.Stealth=false;c.Game.DestroySecrets(1-c.Seat);c.Game.Draw(c.Seat,1);}
  public static void MinionDied(MatchEngine game,BattleUnit dead){if(dead==null||dead.Race!="BEAST")return;foreach(var hyena in game.Players[dead.Owner].Board.Where(u=>u.Health>0&&!u.Silenced&&game.Card(u.CardId).BaseId=="EX1_531").ToArray())game.Buff(new MatchTarget(hyena.Owner,hyena.Id),2,1);}
- public static void SecretRevealed(MatchEngine game,int seat){var p=game.Players[seat];if(p.WeaponId!=null&&p.WeaponDurability>0&&game.Card(p.WeaponId).BaseId=="EX1_536")p.WeaponDurability++;}
+ public static void SecretRevealed(MatchEngine game,int seat){for(int owner=0;owner<2;owner++){var p=game.Players[owner];if(p.WeaponId==null||p.WeaponDurability<=0)continue;var weapon=game.Card(p.WeaponId);if(weapon.BaseId=="EX1_536"&&(owner==seat||!weapon.FriendlySecretsOnly))p.WeaponDurability++;}}
 }
 }

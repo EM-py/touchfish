@@ -1,0 +1,37 @@
+{
+  "SchemaVersion": 1,
+  "Id": "naxxramas-balance-2014",
+  "Name": "经典牌·纳克萨玛斯修订",
+  "DisplayName": "经典牌·纳克萨玛斯修订",
+  "HiddenInBrowser": true,
+  "Version": "2014-08-before-1.2.0",
+  "Cards": [
+    {
+      "Id": "NAX_EX1_536",
+      "BaseId": "EX1_536",
+      "DbfId": 1662,
+      "LegacyDbfId": 0,
+      "Name": "鹰角弓",
+      "Text": "每当一个友方奥秘被揭示时，便获得+1耐久度。",
+      "RawText": "每当一个友方奥秘被揭示时，便获得+1耐久度。",
+      "CardClass": "HUNTER",
+      "Type": "WEAPON",
+      "Rarity": "RARE",
+      "SetId": "naxxramas-balance-2014",
+      "Cost": 3,
+      "Attack": 3,
+      "Health": 2,
+      "Durability": 2,
+      "Collectible": true,
+      "Mechanics": [
+        "TRIGGER_VISUAL"
+      ],
+      "Race": "",
+      "Entourage": [],
+      "Overload": 0,
+      "SpellDamage": 0,
+      "EffectId": "EX1_536",
+      "FriendlySecretsOnly": true
+    }
+  ]
+}

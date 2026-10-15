@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,9 +12,9 @@ namespace Touchfish {
 public sealed class LanCommand {public string Kind,Session,Choice,Emote;public int Revision,RequestId,Source,Position=-1;public int[] SelectedHandIds;public MatchTarget Target;}
 public sealed class LanPlayerView {public PublicPlayerState Public;public BattleUnit[] Board;public HandCard[] Hand;public string[] DeckPreview;public int HandCount,DeckCount;}
 public sealed class LanState {public string Session,ModeId;public int Revision,FirstSeat,Active,Turn,Winner,CardsPlayed,AnimationSequence,AnimationRemainingMs;public LanPlayerView[] Players;public int TurnClockSequence,TurnClockRemainingMs=-1;public int LogStart;public string[] Log;public string VisualSession;public MatchVisualEvent[] VisualEvents;public int ArenaWins0,ArenaWins1,ArenaGameNumber,ArenaSeriesWinner=-2;}
-public sealed class LanMessage {public string PlayerName;public string Kind,Fingerprint,Code,PoolId,ModeId,ArenaSession,Message,LogSession;public int LogAck,Protocol=LanProtocol.Version,ReplyId,ChoiceIndex,ArenaRevision;public bool Success,FullEffectsEnabled,PresentationOnly;public LanCommand Command;public LanState State;public ArenaDraftView ArenaDraft;public int EffectsLevel=-1;public EffectLevel ReadEffects(){return EffectsLevel==-1?(FullEffectsEnabled?EffectLevel.High:EffectLevel.Off):EffectSettings.FromWire(EffectsLevel);}}
+public sealed class LanMessage {public string PlayerName;public string Kind,Fingerprint,Code,PoolId,ModeId,ArenaSession,Message,LogSession;public int LogAck,Protocol=LanProtocol.Version,ReplyId,ChoiceIndex,ArenaRevision;public bool Success,FullEffectsEnabled,PresentationOnly;public LanCommand Command;public LanState State;public ArenaDraftView ArenaDraft;public SealedView Sealed;public string SealedAction,SealedCard;public int SealedAmount;public int EffectsLevel=-1;public EffectLevel ReadEffects(){return EffectsLevel==-1?(FullEffectsEnabled?EffectLevel.High:EffectLevel.Off):EffectSettings.FromWire(EffectsLevel);}}
 public static class LanProtocol {
- public const int Version=3;public const int Port=42671,MaxFrame=131072;
+ public const int Version=4;public const int Port=42671,MaxFrame=131072;
  public static bool PrivateAddress(IPAddress address){if(address.AddressFamily!=AddressFamily.InterNetwork)return false;var b=address.GetAddressBytes();return b[0]==127||b[0]==10||b[0]==192&&b[1]==168||b[0]==172&&b[1]>=16&&b[1]<=31||b[0]==169&&b[1]==254;}
  public static IPEndPoint Endpoint(string value){var parts=value.Trim().Split(':');IPAddress address;int port=Port;if(parts.Length>2||!IPAddress.TryParse(parts[0],out address)||!PrivateAddress(address)||parts.Length==2&&(!Int32.TryParse(parts[1],out port)||port<1024||port>65535))throw new InvalidOperationException("请输入局域网 IPv4 地址，例如 192.168.1.8:42671。");return new IPEndPoint(address,port);}
  public static string Addresses(int port){return String.Join(" / ",Dns.GetHostAddresses(Dns.GetHostName()).Where(a=>PrivateAddress(a)&&!IPAddress.IsLoopback(a)).Select(a=>a+":"+port));}

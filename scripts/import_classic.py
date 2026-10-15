@@ -74,7 +74,14 @@ def main():
     pool = {"SchemaVersion": 1, "Pools": [{"Id": "classic-2014", "Name": "经典 2014", "CardSetIds": ["classic-2014"],
         "DeckSize": 30, "CopyLimit": 2, "LegendaryLimit": 1, "DeckstringFormat": 3,
         "HeroDbfIds": {h["cardClass"]: h["dbfId"] for h in heroes}}]}
-    (ROOT / "data" / "pools.json").write_text(json.dumps(pool, ensure_ascii=False, indent=2), encoding="utf-8")
+    pool_path = ROOT / "data" / "pools.json"
+    if pool_path.exists():
+        existing = json.loads(pool_path.read_text(encoding="utf-8-sig"))
+        old_classic = next((p for p in existing['Pools'] if p['Id']=='classic-2014'), {})
+        if old_classic.get('Archived'):
+            pool['Pools'][0]['Archived'] = True
+        pool["Pools"] += [p for p in existing["Pools"] if p["Id"] != "classic-2014"]
+    pool_path.write_text(json.dumps(pool, ensure_ascii=False, indent=2), encoding="utf-8")
     report = {"SourceUrl": URL, "ImportedUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "SnapshotCachedUtc": datetime.datetime.fromtimestamp(cached.stat().st_mtime, datetime.timezone.utc).isoformat(),
         "SourceBuild": BUILD, "RulesBaseline": "2014-06 / 1.0.0.5832 via frozen VANILLA records",
