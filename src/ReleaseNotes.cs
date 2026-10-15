@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.7.7",Date="2026-10-14";
- public static readonly string[] PatchNotes=new[]{"修复竞技选牌偶尔点击无效：对手进度刷新不再误解除本方尚未确认的选择请求，只在本方选项版本推进或收到拒绝回复后恢复点击。","忽略过期竞技选牌快照；进入对局后不再接收选牌状态，避免旧消息重新打开选牌界面。","修复竞技首局起手换牌被锁住：首个对局快照明确清除选牌等待状态并关闭选牌界面，不依赖命令回复编号。"};
+ public const string Version="v0.7.8",Date="2026-10-15";
+ public static readonly string[] PatchNotes=new[]{"竞技改为先抽稀有度档，再同档三选一；基础与普通合档，同轮三个选项不重复，跨轮允许重复。","普通轮概率为普通70%、稀有20%、史诗8%、传说2%；第1、10、20、30轮保证稀有及以上，按20:8:2抽取。","同档内职业牌权重乘1.5，法术与武器再乘1.5；集中配置选牌权重，为本项目规则，不声称官方精确概率。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.7.7",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.8",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.7","2026-10-14",new[]{"修复竞技选牌偶尔点击无效：对手进度刷新不再误解除本方尚未确认的选择请求，只在本方选项版本推进或收到拒绝回复后恢复点击。","忽略过期竞技选牌快照；进入对局后不再接收选牌状态，避免旧消息重新打开选牌界面。","修复竞技首局起手换牌被锁住：首个对局快照明确清除选牌等待状态并关闭选牌界面，不依赖命令回复编号。"}));
   body.Children.Add(ReleaseSection("v0.7.6","2026-10-14",new[]{"新增经典奇迹贼 AI：在人机挑战中选择，使用火车王、暗影步、加基森、隐藏与疾跑；随机先后手，正常法力开局。","奇迹贼联合规划解场、连击、范克里夫成长和加基森刷牌，按实际抽牌重新决策；只使用己方手牌、己方剩余牌库无序数量与公开场面。","加入不放回抽牌概率评估，结合当前法力、伺机待发与幸运币比较找牌收益；不读取对手私牌、牌库顺序或随机种子。","改善隐藏与随从的出牌顺序、冷血即时收益及公开飞刀风险评估；含敌方飞刀的新火车王路线不再认定为必然斩杀。","组牌页增加版本筛选入口：可查看全部已安装版本或指定版本；其他卡池仅供浏览，不改变当前卡组。当前仍仅内置经典旧世。","修复特效开启时加成攻击力未正确显示绿色的问题，保持办公界面与极简模式规则。"}));
   body.Children.Add(ReleaseSection("v0.7.5","2026-10-14",new[]{"新增短促攻击冲撞动画：随从和英雄武器攻击向实际目标冲撞后回位，全程约0.36秒；普通模式低/高特效显示，关闭或极简隐藏。伤害飘字和死亡碎裂的显示时机对齐碰撞；规则伤害仍即时结算，不增加双方操作等待。","攻击动画通过公开结构化事件同步与去重，记录攻击方和奥秘处理后的实际目标；非法攻击、被奥秘取消的攻击不播放。切换页面、极简或特效等级时清理动画并恢复原位置。","人机挑战从test移至对战页的模式选项，选择人机挑战后可选择经典冰法或经典动物园，使用自己的完整30张卡组开始；test仅保留十水晶本地双人自对战与取牌工具。","修复冻结解除时机：本回合新召唤且无冲锋的随从被冻结后，不会在当前回合末提前解冻；风怒随从或风怒英雄攻击一次后被冻结，可在错过本回合剩余攻击机会后解冻。普通攻击耗尽后被冻结仍持续至下一次己方回合结束。","统一公共目标结算接口：过滤离场、濒死、错误席位和重复候选；顺劈斩、多重射击、叉状闪电共用无放回多目标选择与批次伤害。教师与飞刀在施法阶段减少目标时，不再因缺少第二目标抛出异常；全体目标消失也安全结束。","同批伤害先固定目标，不追打亡语新召唤的随从；逐次飞弹仍逐发选目标。初始出牌条件不足仍在扣费前拒绝，合法支付后的目标变化不返还手牌或费用，过载及施法后触发照常结算。","公共增益与设生命入口统一拒绝濒死随从，防止在死亡处理前被后续加血救活；新增目标结算扩展约定及独立专项检查，保留同时伤害中受伤触发的原有语义。"}));
   body.Children.Add(ReleaseSection("v0.7.4","2026-10-13",new[]{"修复希尔瓦娜斯与憎恶的亡语连锁：憎恶已造成致命伤害的随从不再进入随机偷取候选，女王只选择仍存活的敌方随从，避免有活目标时偷取落空。","修复镜像实体与公正之剑：先完成随从属性复制，再结算接收方的召唤增益；复制随从正确保留 +1/+1，武器只消耗一次耐久。战歌指挥官的冲锋与己方光环也按复制后的属性结算。","修复零攻击血吼配合英勇打击：借助英雄临时攻击力攻击随从时，血吼攻击力最低保持为零，不再降成负数；随后使用升级！正确获得 +1 攻击和 +1 耐久。","修复紫罗兰教师与飞刀杂耍者导致法术目标提前死亡的异常：飞刀先杀死目标后，神圣之灵、心灵之火、死亡缠绕等定向效果安全失效，不再访问已离场随从。法术仍消耗费用、计入本回合出牌，正常结算过载与施法后触发。","修复食腐土狼在憎恶亡语连锁中被错误救活：已受到致命伤害的土狼不再获得后续野兽死亡的 +2/+1；仍存活的土狼继续正常获得增益。","修复沉默后的新增法术伤害：被沉默的随从随后受到大法师战吼赋予的法术伤害 +1 时，加成正常生效；再次沉默会清除新增法强，公开快照与客户端保持一致。"}));
