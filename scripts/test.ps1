@@ -4,7 +4,7 @@ $Scope=$Scope -replace '\s+',','
 $taskRoot=Split-Path -Parent $PSScriptRoot
 $testRoot=Join-Path $taskRoot 'work/test-bin'
 $ruleNames=@('sealed','naxx-library','miracle-ai','target-resolution','effects-level','pyroblast','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin','shaman','mage','priest','opening','shadowstep','warlock','druid-spells','triggers','engine','library','modes','enchantments','privacy','resolution','warrior','secrets','rogue','deathrattle','combo','overload')
-$wpfNames=@('sealed','miracle-ai','card-sets','attack','effects-level','pyroblast','death-shatter','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets')
+$wpfNames=@('sealed','miracle-ai','card-sets','attack','effects-level','pyroblast','death-shatter','zoo-ai','ai','names','dragons','high-cost','mid-cost','hunter','arena','low-cost','heroes','paladin-shaman','mage','priest','full','summon','turn-end','hero-visuals','triggers','deathrattle','druid-spells','emote-selection','overload','spell-cards','opening-turn','deck-picker','hero-freeze','combo','warlock','visual-polish','graveyard','rogue','warrior','secret-presentation','secrets','draw-visuals')
 if($Scope -eq 'auto'){
  $paths=@(git -C $taskRoot diff --name-only HEAD)+@(git -C $taskRoot ls-files --others --exclude-standard)
  $selected=@();$selectedWpf=@()

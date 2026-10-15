@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Linq;
 using System.Collections.Generic;
@@ -6,8 +6,8 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.7.9",Date="2026-10-15";
- public static readonly string[] PatchNotes=new[]{"新增局域网现开赛：选职业后开18包共90张，从本人牌池组30张，按实际开出数量使用，三局两胜且局间可重组。","房主生成并校验现开牌池与组牌操作，只向本人发送私有内容；开包参考官方公开均值、保底与防重复规则模拟，金色不改变数值。","导入纳克萨玛斯30张新卡与5张召唤辅助牌，当前时代卡池412张；新卡效果尚未实现，标记暂不可用并排除出对战开局与现开卡包。","统一组牌显示2014年8月版本，鹰角弓仅响应友方奥秘；纯经典382张后台保留，隐藏纯经典切换与内部修订栏目，旧卡组编辑时按当前版本映射。","协议升级为4，双方需更新同一客户端；保持固定窗口和办公外观，不改写个人已保存卡组与偏好。"};
+ public const string Version="v0.8.0",Date="2026-10-15";
+ public static readonly string[] PatchNotes=new[]{"现开开包与组牌行增加…详情按钮；加减卡牌与查看详情保留两个列表各自的滚动位置，对手进度刷新不再重建本方卡牌列表。","新增爆牌动画：手牌已满时抽到的卡牌在屏幕中央出现并碎裂；牌主看到牌面，对手只看到卡背。","爆牌时英雄显示‘我的手牌已经满了！’气泡；公开记录不透露被爆卡牌名称。","对手手牌数后显示其牌库剩余数量；牌库抽空后每次抽牌显示疲劳提示和递增伤害。","保持普通与极简窗口尺寸、局域网房主结算和手牌隐私；爆牌牌面按观战方逐端隐藏。"};
  public static readonly string[] Notes={
   "首个正式版本，保留小尺寸、无卡图的办公面板外观。",
   "局域网对战：创建与加入房间，房主地址可一键复制，多网卡可切换；双方固定己方视角，操作自动同步，断线后停止操作。",
@@ -27,7 +27,8 @@ public partial class PanelWindow {
  void BuildReleaseNotes(){
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
-  body.Children.Add(ReleaseSection("v0.7.9",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.8.0",AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.7.9","2026-10-15",new[]{"新增局域网现开赛：选职业后每人开18包，每包5张，共90张；从自己的牌池组30张，不受常规同名限制，但不能超过实际开出的张数。","三局两胜，局间可用原始90张重组；房主生成和校验，私有牌池不发给对手。当前仅发放已实现效果的本职与中立非基础牌。","按官方公开普通包的长期获得率、首次传说、各品质保底及防重复规则模拟；不沿用竞技权重，不声称复刻未公开内部抽样算法。金色仅为开包记录，不改变数值。","协议升级为4，保持普通与极简固定尺寸、办公外观，不写入个人卡组或偏好。"}));
   body.Children.Add(ReleaseSection("v0.7.8","2026-10-15",new[]{"竞技改为先抽稀有度档，再同档三选一；基础与普通合档，同轮三个选项不重复，跨轮允许重复。","普通轮概率为普通70%、稀有20%、史诗8%、传说2%；第1、10、20、30轮保证稀有及以上，按20:8:2抽取。","同档内职业牌权重乘1.5，法术与武器再乘1.5；集中配置选牌权重，为本项目规则，不声称官方精确概率。"}));
   body.Children.Add(ReleaseSection("v0.7.7","2026-10-14",new[]{"修复竞技选牌偶尔点击无效：对手进度刷新不再误解除本方尚未确认的选择请求，只在本方选项版本推进或收到拒绝回复后恢复点击。","忽略过期竞技选牌快照；进入对局后不再接收选牌状态，避免旧消息重新打开选牌界面。","修复竞技首局起手换牌被锁住：首个对局快照明确清除选牌等待状态并关闭选牌界面，不依赖命令回复编号。"}));
   body.Children.Add(ReleaseSection("v0.7.6","2026-10-14",new[]{"新增经典奇迹贼 AI：在人机挑战中选择，使用火车王、暗影步、加基森、隐藏与疾跑；随机先后手，正常法力开局。","奇迹贼联合规划解场、连击、范克里夫成长和加基森刷牌，按实际抽牌重新决策；只使用己方手牌、己方剩余牌库无序数量与公开场面。","加入不放回抽牌概率评估，结合当前法力、伺机待发与幸运币比较找牌收益；不读取对手私牌、牌库顺序或随机种子。","改善隐藏与随从的出牌顺序、冷血即时收益及公开飞刀风险评估；含敌方飞刀的新火车王路线不再认定为必然斩杀。","组牌页增加版本筛选入口：可查看全部已安装版本或指定版本；其他卡池仅供浏览，不改变当前卡组。当前仍仅内置经典旧世。","修复特效开启时加成攻击力未正确显示绿色的问题，保持办公界面与极简模式规则。"}));
