@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Touchfish;
 public static partial class RuleTests {
@@ -6,9 +6,9 @@ public static partial class RuleTests {
  static void NaxxKill(MatchEngine g,BattleUnit unit){unit.DamageTaken=unit.MaxHealth;g.Cleanup();}
  static void NaxxCards(){
   Check(NaxxRules.CardIds.Length==12&&NaxxRules.CardIds.All(c=>matchRules.Supports(catalog.Card(c))),"Requested twelve cards are registered");
-  Check(catalog.Deckable(catalog.Pool("classic-2014")).Count(matchRules.Supports)==382&&catalog.Deckable(catalog.Pool("naxxramas-2014")).Count(matchRules.Supports)==396,"Classic remains 382; twelve requested plus two generated beasts make 396/412");
+  Check(catalog.Deckable(catalog.Pool("classic-2014")).Count(matchRules.Supports)==382&&catalog.Deckable(catalog.Pool("naxxramas-2014")).Count(matchRules.Supports)==412,"Classic remains 382; all thirty Naxx cards make 412/412");
   foreach(string cl in catalog.Pool("classic-2014").HeroDbfIds.Keys){var own=catalog.BrowseDeckable("naxxramas-2014").Single(c=>c.CardClass==cl);Check(matchRules.Supports(own),cl+" Naxx class card supported");var a=new DeckDocument{ClassId=cl,PoolId="naxxramas-2014"};a.Cards[own.Id]=1;var b=new DeckDocument{ClassId="MAGE",PoolId=a.PoolId};Check(new MatchEngine(catalog,a,b,12,testMode:true)!=null,"Actual opening accepts "+own.Name);}
-  NaxxDeathEffects();NaxxSecrets();NaxxSpellsAndWeapon();NaxxLoatheb();
+  NaxxDeathEffects();NaxxSecrets();NaxxSpellsAndWeapon();NaxxLoatheb();NaxxRemaining();
  }
  static void NaxxDeathEffects(){
   var g=Game();var web=g.Summon(0,"FP1_011");NaxxKill(g,web);Check(g.Players[0].Hand.Count==1,"Webspinner gives one card");var generated=g.Players[0].Hand.Single();Check(g.Card(generated.CardId).Race=="BEAST"&&generated.Generated&&g.Rules.Supports(g.Card(generated.CardId)),"Generated beast has valid effect and foreign-class permission");var wire=LanProtocol.View(g,1,"web",1);Check(wire.Players[0].Hand.Length==0&&wire.Players[0].HandCount==1,"Webspinner identity private, quantity public");
@@ -53,4 +53,47 @@ public static partial class RuleTests {
   g=Game();g.Play(0,NaxxHand(g,"FP1_030"));g.Players[1].PreparationDiscount=3;Check(g.CardCost(1,catalog.Card("VAN_CS2_029"))==6,"Preparation reduces Loatheb-adjusted cost by three");g.Players[1].PreparationDiscount=0;TimedCostRules.GrantFreeSpells(g,1,g.Turn+1);Check(g.CardCost(1,catalog.Card("VAN_CS2_029"))==0,"Later Millhouse cost-setting overrides earlier Loatheb increase");g.Players[0].Mana=10;g.Play(0,NaxxHand(g,"FP1_030"));Check(g.CardCost(1,catalog.Card("VAN_CS2_029"))==5,"Later Loatheb increases earlier zero-cost spells");g.Players[1].FreeSecretThisTurn=true;Check(g.CardCost(1,catalog.Card("FP1_018"))==0,"Next-secret free effect still sets its spell to zero");
   g=Game();NaxxKill(g,g.Summon(0,"FP1_002"));Check(g.Players[0].Board.Count==2&&g.Players[0].Board.All(u=>u.CardId=="FP1_002t"&&u.Health==1),"Webspinner-generated Haunted Creeper summons two spiders");
  }
+ static void NaxxRemaining(){
+  Check(NaxxRules.RemainingIds.Length==16&&NaxxRules.RemainingIds.All(c=>matchRules.Supports(catalog.Card(c))),"Remaining sixteen cards enabled");
+  Check(catalog.Card("FP1_012").Attack==3&&catalog.Card("FP1_012").Health==5,"Belcher uses original 3/5 stats");
+  var g=Game();var egg=g.Summon(0,"FP1_007");NaxxKill(g,egg);Check(g.Players[0].Board.Single().CardId=="FP1_007t","Egg summons Nerubian");
+  g=Game();var belcher=g.Summon(0,"FP1_012");NaxxKill(g,belcher);Check(g.Players[0].Board.Single().CardId=="FP1_012t"&&g.Players[0].Board.Single().Taunt,"Belcher summons taunt slime");
+  g=Game();g.Players[1].Health=20;NaxxKill(g,g.Summon(0,"FP1_001"));Check(g.Players[1].Health==25,"Zombie Chow heals opponent");
+  g=Game();g.Players[1].Health=20;g.Summon(0,"VAN_EX1_591");NaxxKill(g,g.Summon(0,"FP1_001"));Check(g.Players[1].Health==15,"Chow respects source Auchenai conversion");
+  g=Game();var enemy=g.Summon(1,"VAN_CS2_182");var ghoul=g.Summon(0,"FP1_024");g.Summon(0,"VAN_EX1_012");NaxxKill(g,ghoul);Check(enemy.DamageTaken==1&&g.Players[0].Health==30,"Ghoul hits minions only without spell power");
+  g=Game();g.Players[1].Deck.Clear();g.Players[1].Deck.Add("VAN_CS2_029");NaxxKill(g,g.Summon(0,"FP1_029"));Check(g.Players[1].Hand.Single().CardId=="VAN_CS2_029","Dancing Swords draws for opponent");Check(LanProtocol.View(g,0,"swords",1).Players[1].Hand.Length==0,"Swords drawn identity stays private");
+  g=Game();var shade=g.Summon(0,"FP1_005");g.EndTurn();Check(shade.BuffAttack==0,"Shade does not grow on enemy turn");g.EndTurn();Check(shade.BuffAttack==1&&shade.BuffHealth==1&&shade.Stealth,"Shade grows on own start and retains stealth");g.Silence(new MatchTarget(0,shade.Id));g.EndTurn();g.EndTurn();Check(shade.BuffAttack==0,"Silenced Shade stops growing");
+  g=Game();var garg=g.Summon(0,"FP1_027");g.Damage(new MatchTarget(0,garg.Id),2);g.EndTurn();Check(garg.DamageTaken==2,"Gargoyle waits own turn");g.EndTurn();Check(garg.DamageTaken==0,"Gargoyle heals all damage at own start");
+  g=Game();var undertaker=g.Summon(0,"FP1_028");g.Summon(0,"FP1_007");g.Summon(1,"FP1_007");Check(undertaker.BuffAttack==1&&undertaker.BuffHealth==1,"Original Undertaker grows +1/+1 only for friendly deathrattle summon");g.Silence(new MatchTarget(0,undertaker.Id));g.Summon(0,"FP1_007");Check(undertaker.BuffAttack==0,"Silenced Undertaker stops");
+  g=Game();var lord=g.Summon(0,"FP1_017");var battle=catalog.Card("VAN_EX1_319");Check(g.CardCost(0,battle)==3&&g.CardCost(1,battle)==3,"Weblord taxes both players battlecry minions");g.Summon(1,"FP1_017");Check(g.CardCost(0,battle)==5,"Weblord stacks");g.Silence(new MatchTarget(0,lord.Id));Check(g.CardCost(0,battle)==3&&g.CardCost(0,catalog.Card("FP1_007"))==2,"Silence removes aura; non-battlecry unchanged");
+  g=Game();var knight=g.Summon(1,"FP1_008");int fire=Hand(g,"CS2_029");Check(!g.Play(0,fire,new MatchTarget(1,knight.Id)).Success&&g.Players[0].Mana==10,"Spectral Knight rejects targeted spell before spending");g.Silence(new MatchTarget(1,knight.Id));Check(g.Play(0,fire,new MatchTarget(1,knight.Id)).Success,"Silence removes Spectral Knight targeting protection");
+  g=Game();var own=g.Summon(0,"VAN_CS2_182");enemy=g.Summon(1,"FP1_005");g.Buff(new MatchTarget(0,own.Id),2,2);Check(g.Play(0,NaxxHand(g,"FP1_016")).Success&&own.Silenced&&enemy.Silenced&&!g.Players[0].Board.Last().Silenced,"Wailing Soul silences all other minions on both sides");
+  Check(catalog.Cards.Values.Where(c=>c.SetId=="naxxramas-2014").All(matchRules.Supports),"All summoned helper effects supported for bounce and copy into hand");
+  g=Game();g.Summon(0,"FP1_031");for(int n=0;n<5;n++)g.Summon(0,"VAN_CS2_182");NaxxKill(g,g.Summon(0,"FP1_007"));Check(g.Players[0].Board.Count==7&&g.Players[0].Board.Count(u=>u.CardId=="FP1_007t")==1,"Doubled summons respect seven-slot cap");
+  g=Game();var silentEgg=g.Summon(0,"FP1_007");g.Silence(new MatchTarget(0,silentEgg.Id));NaxxKill(g,silentEgg);Check(g.Players[0].Board.Count==0,"Silenced native deathrattle suppressed");
+  NaxxBaronAndTwins();NaxxEchoAndKelthuzad();
+ }
+ static void NaxxBaronAndTwins(){
+  var g=Game();var baron=g.Summon(0,"FP1_031");g.Summon(0,"FP1_031");NaxxKill(g,g.Summon(0,"FP1_007"));Check(g.Players[0].Board.Count(u=>u.CardId=="FP1_007t")==2,"Multiple Barons double instead of multiplying");
+  g=Game();baron=g.Summon(0,"FP1_031");var egg=g.Summon(0,"FP1_007");baron.DamageTaken=baron.MaxHealth;egg.DamageTaken=egg.MaxHealth;g.Cleanup();Check(g.Players[0].Board.Count==1,"Simultaneously dead Baron does not double deathrattles");
+  g=Game();baron=g.Summon(0,"FP1_031");g.Silence(new MatchTarget(0,baron.Id));NaxxKill(g,g.Summon(0,"FP1_007"));Check(g.Players[0].Board.Count(u=>u.CardId=="FP1_007t")==1,"Silenced Baron has no multiplier");
+  g=Game();g.Summon(0,"FP1_031");egg=g.Summon(0,"VAN_CS2_182");egg.ForestDeathrattles=1;NaxxKill(g,egg);Check(g.Players[0].Board.Count(u=>u.CardId=="VAN_EX1_tk9")==2,"Baron also doubles granted deathrattles");
+  g=Game();NaxxKill(g,g.Summon(0,"FP1_014"));Check(g.Players[0].Board.Count==0,"First twin alone produces no Thaddius");NaxxKill(g,g.Summon(1,"FP1_015"));Check(g.Players[1].Board.Single().CardId=="FP1_014t","Twin checks deaths across both players");
+  g=Game();var a=g.Summon(0,"FP1_014");var b=g.Summon(0,"FP1_015");a.DamageTaken=a.MaxHealth;b.DamageTaken=b.MaxHealth;g.Cleanup();Check(g.Players[0].Board.Count==2&&g.Players[0].Board.All(u=>u.CardId=="FP1_014t"),"Simultaneous twins each summon Thaddius");
+  g=Game();a=g.Summon(0,"FP1_014");g.Silence(new MatchTarget(0,a.Id));NaxxKill(g,a);NaxxKill(g,g.Summon(0,"FP1_015"));Check(g.Players[0].Board.Single().CardId=="FP1_014t","Silenced partner death still counts in graveyard");
+ }
+ static void NaxxEchoAndKelthuzad(){
+  var g=Game();g.Play(0,NaxxHand(g,"FP1_003"));var ooze=g.Players[0].Board.Single();g.Buff(new MatchTarget(0,ooze.Id),3,2);g.Damage(new MatchTarget(0,ooze.Id),1);g.EndTurn();Check(g.Players[0].Board.Count==2&&g.Players[0].Board.All(u=>u.BuffAttack==3&&u.BuffHealth==2&&u.DamageTaken==1),"Echo duplicates current stats and damage at turn end");Check(g.Players[0].Board.Select(u=>u.Id).Distinct().Count()==2,"Echo copy has independent identity");g.EndTurn();g.EndTurn();Check(g.Players[0].Board.Count==2,"Echo battlecry fires once, copy does not repeat");
+  g=Game();g.Summon(0,"FP1_003");g.EndTurn();Check(g.Players[0].Board.Count==1,"Directly summoned Echo has no battlecry copy");
+  g=Game();g.Play(0,NaxxHand(g,"FP1_003"));g.Silence(new MatchTarget(0,g.Players[0].Board.Single().Id));g.EndTurn();Check(g.Players[0].Board.Count==1,"Silence removes pending Echo copy");
+  g=Game();g.Play(0,NaxxHand(g,"FP1_003"));for(int n=0;n<6;n++)g.Summon(0,"VAN_CS2_182");g.EndTurn();Check(g.Players[0].Board.Count==7,"Echo respects seven slots");
+  g=Game();NaxxKill(g,g.Summon(0,"VAN_EX1_319"));g.Summon(0,"FP1_013");g.EndTurn();Check(g.Players[0].Board.Any(u=>u.CardId=="VAN_EX1_319")&&g.Players[0].Health==30,"Kelthuzad revives same-turn minion without battlecry");
+  var imp=g.Players[0].Board.Single(u=>u.CardId=="VAN_EX1_319");NaxxKill(g,imp);g.EndTurn();Check(g.Players[0].Board.Any(u=>u.CardId=="VAN_EX1_319"),"Kelthuzad triggers at enemy end too");
+  g=Game();NaxxKill(g,g.Summon(0,"VAN_CS2_182"));g.EndTurn();g.Summon(0,"FP1_013");g.EndTurn();Check(g.Players[0].Board.Count==1,"Kelthuzad excludes previous-turn deaths");
+  g=Game();var stolen=g.Summon(1,"VAN_CS2_182");g.TakePermanentControl(0,new MatchTarget(1,stolen.Id));NaxxKill(g,stolen);g.Summon(0,"FP1_013");g.EndTurn();Check(g.Players[0].Board.Any(u=>u.CardId=="VAN_CS2_182")&&g.Players[1].Board.Count==0,"Resurrection uses controller at death");
+  g=Game();for(int n=0;n<8;n++)NaxxKill(g,g.Summon(0,"VAN_CS2_182"));g.Summon(0,"FP1_013");g.EndTurn();Check(g.Players[0].Board.Count==7,"Kelthuzad resurrects only available six slots");
+  g=Game();var original=g.Summon(0,"VAN_CS2_182");g.Buff(new MatchTarget(0,original.Id),4,4);NaxxKill(g,original);var silentKt=g.Summon(0,"FP1_013");g.Silence(new MatchTarget(0,silentKt.Id));g.EndTurn();Check(g.Players[0].Board.Count==1,"Silenced Kelthuzad cannot resurrect");
+  g=Game();NaxxKill(g,g.Summon(0,"VAN_CS2_182"));var kt=g.Summon(0,"FP1_013");NaxxKill(g,kt);g.EndTurn();Check(g.Players[0].Board.Count==0,"Dead Kelthuzad cannot trigger its own return");
+ }
+
 }

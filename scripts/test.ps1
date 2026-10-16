@@ -1,4 +1,4 @@
-param([string]$Scope='auto',[ValidateSet('rules','network','ui','all')][string]$Layer='rules',[switch]$PlanOnly)
+﻿param([string]$Scope='auto',[ValidateSet('rules','network','ui','all')][string]$Layer='rules',[switch]$PlanOnly)
 $ErrorActionPreference='Stop'
 $Scope=$Scope -replace '\s+',','
 $taskRoot=Split-Path -Parent $PSScriptRoot
@@ -11,6 +11,7 @@ if($Scope -eq 'auto'){
  foreach($path in $paths){
   if($path -notmatch '^(src/|tests/|data/|scripts/test.ps1|build.ps1)'){continue}
   if($path -match '(?i)Sealed'){$selected+='sealed';$selectedWpf+='sealed';continue}
+  if($path -match '(?i)(NaxxRules|NaxxCardChecks)'){$selected+='naxx-cards';$selectedWpf+='naxx-cards';continue}
   if($path -match '(?i)Naxx'){$selected+='naxx-library';$selectedWpf+='card-sets';continue}
   if($path -match '(?i)Miracle'){$selected+='miracle-ai';$selectedWpf+='miracle-ai';continue}
   if($path -match '(?i)AttackEffects'){$selected+='engine';$selectedWpf+='attack';continue}

@@ -330,7 +330,7 @@
       "SetId": "naxxramas-2014",
       "Cost": 5,
       "Attack": 3,
-      "Health": 6,
+      "Health": 5,
       "Durability": 0,
       "Collectible": true,
       "Mechanics": [

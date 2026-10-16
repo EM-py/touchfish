@@ -5,6 +5,8 @@ using System.Linq;
 namespace Touchfish {
 public static class DeathrattleRules {
  static readonly Dictionary<string,Action<MatchEngine,BattleUnit>> effects=new Dictionary<string,Action<MatchEngine,BattleUnit>>{
+  {"FP1_001",NaxxRules.RemainingDeath},{"FP1_024",NaxxRules.RemainingDeath},{"FP1_029",NaxxRules.RemainingDeath},{"FP1_014",NaxxRules.RemainingDeath},{"FP1_015",NaxxRules.RemainingDeath},
+  {"FP1_007",(g,u)=>SummonAtDeath(g,u,"FP1_007t",1)},{"FP1_012",(g,u)=>SummonAtDeath(g,u,"FP1_012t",1)},
   {"FP1_002",(g,u)=>SummonAtDeath(g,u,"FP1_002t",2)},
   {"FP1_011",NaxxRules.Death},{"FP1_023",NaxxRules.Death},{"FP1_022",NaxxRules.Death},{"FP1_026",NaxxRules.Death},{"FP1_004",NaxxRules.Death},{"FP1_009",NaxxRules.Death},
   {"EX1_556",(g,u)=>SummonAtDeath(g,u,"VAN_skele21",1)},
@@ -19,7 +21,7 @@ public static class DeathrattleRules {
   {"EX1_577",(g,u)=>g.Summon(1-u.Owner,"VAN_EX1_finkle")}
  };
  public static string[] CardIds{get{return effects.Keys.ToArray();}}
- public static void Resolve(MatchEngine game,BattleUnit unit){Action<MatchEngine,BattleUnit> effect;if(!unit.Silenced&&effects.TryGetValue(game.Card(unit.CardId).BaseId,out effect)){game.Log.Add(game.PlayerLabel(unit.Owner)+" · 亡语："+game.Card(unit.CardId).Name);game.DamageBatch(()=>effect(game,unit));}foreach(var enchantment in unit.Enchantments.Items.Where(e=>e.Kind=="forest-deathrattle"||e.Kind=="ancestral-spirit").ToArray()){game.Log.Add(game.PlayerLabel(unit.Owner)+" · "+(enchantment.Kind=="ancestral-spirit"?"先祖之魂":"丛林之魂")+"亡语："+game.Card(unit.CardId).Name);SummonAtDeath(game,unit,enchantment.Kind=="ancestral-spirit"?unit.CardId:"VAN_EX1_tk9",enchantment.Amount);}}
+ public static void Resolve(MatchEngine game,BattleUnit unit){int repeats=NaxxRules.DeathrattleCount(game,unit.Owner);Action<MatchEngine,BattleUnit> effect;if(!unit.Silenced&&effects.TryGetValue(game.Card(unit.CardId).BaseId,out effect)){game.Log.Add(game.PlayerLabel(unit.Owner)+" · 亡语："+game.Card(unit.CardId).Name);for(int n=0;n<repeats;n++)game.DamageBatch(()=>effect(game,unit));}foreach(var enchantment in unit.Enchantments.Items.Where(e=>e.Kind=="forest-deathrattle"||e.Kind=="ancestral-spirit").ToArray()){game.Log.Add(game.PlayerLabel(unit.Owner)+" · "+(enchantment.Kind=="ancestral-spirit"?"先祖之魂":"丛林之魂")+"亡语："+game.Card(unit.CardId).Name);for(int n=0;n<repeats;n++)SummonAtDeath(game,unit,enchantment.Kind=="ancestral-spirit"?unit.CardId:"VAN_EX1_tk9",enchantment.Amount);}}
  static void SummonAtDeath(MatchEngine game,BattleUnit unit,string id,int count){var board=game.Players[unit.Owner].Board;int position=board.FindIndex(u=>u.Id==unit.DeathAnchor);if(position<0)position=board.Count;for(int i=0;i<count;i++){if(game.Summon(unit.Owner,id,position)==null)break;position++;}}
 }
 public sealed partial class MatchEngine {

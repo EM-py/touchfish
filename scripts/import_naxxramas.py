@@ -33,7 +33,7 @@ def main():
             LegacyDbfId=0, Name=c['name'], Text=plain(c.get('text')), RawText=c.get('text', ''),
             CardClass=c.get('cardClass', 'NEUTRAL'), Type=c['type'], Rarity=c.get('rarity', 'FREE'),
             SetId='naxxramas-2014', Cost=c.get('cost', 0), Attack=c.get('attack', 0),
-            Health=c.get('health', 0), Durability=(c.get('durability') or c.get('health', 0)) if c['type']=='WEAPON' else 0,
+            Health=5 if c['id']=='FP1_012' else c.get('health', 0), Durability=(c.get('durability') or c.get('health', 0)) if c['type']=='WEAPON' else 0,
             Collectible=c in playable, Mechanics=c.get('mechanics', []), Race=race,
             Entourage=c.get('entourage', []), Overload=c.get('overload', 0), SpellDamage=spell_damage(c)))
     package = dict(SchemaVersion=1, Id='naxxramas-2014', Name='纳克萨玛斯 2014',
@@ -43,7 +43,8 @@ def main():
     provenance = dict(SourceUrl=URL, SourceBuild=BUILD, SnapshotSha256=hashlib.sha256(raw).hexdigest(),
         SourceExtractSha256=hashlib.sha256(source_path.read_bytes()).hexdigest(),
         PackageSha256=hashlib.sha256(out.read_bytes()).hexdigest(), DeckableCards=30, HelperCards=len(helpers),
-        Reconstruction=['Removed later Undead race tags; retained original Beast/Demon types.',
+        Reconstruction=['Restored Sludge Belcher to original 3/5 before the 27.2 buff (https://hearthstone.blizzard.com/en-gb/news/23987537/27-2-patch-notes).',
+            'Removed later Undead race tags; retained original Beast/Demon types.',
             'Explicit EffectId retains unsupported-effect blocking until Naxxramas rules are implemented.',
             "Weapon durability falls back to source health when the durability field is zero; Death's Bite is 4/2."],
         Scope='Collectible multiplayer cards and five summon tokens only; no adventure bosses or puzzle cards.')
