@@ -111,6 +111,7 @@ public sealed class MatchRules {
   Register("EX1_002","ENEMY_TAUNT_MINION",HighCostRules.Apply);Register("EX1_283","ANY_CHARACTER",HighCostRules.Apply);Register("EX1_564","MINION",HighCostRules.Apply);
   Register("GAME_I_AM_MURLOC","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);Register("GAME_ROGUES_DO_IT","ANY_CHARACTER",HighCostRules.Apply);Register("PRO_001c","NONE",HighCostRules.Apply,(g,s)=>g.Players[s].Board.Count>=g.Mode.BoardSlots?"战场已满。":null);
   Register("EX1_560","NONE",c=>{});Register("EX1_561","HERO",ClassicDragonRules.Alexstrasza);
+  NaxxRules.Register(this);
   RuleModules.Configure(this);
  }
  public static string EffectKey(CardRecord card){return !String.IsNullOrEmpty(card.EffectId)?card.EffectId:card.SetId=="classic-2014"||String.IsNullOrEmpty(card.SetId)?card.BaseId:card.Id;}
@@ -146,7 +147,7 @@ public sealed class MatchRules {
   case "NEW1_007":if(c.Choice=="five")Hit(c,5);else Area(c,1-c.Seat,2,false);break;
   case "NEW1_008":if(c.Choice=="draw")c.Game.Draw(c.Seat,2);else c.Game.RestoreHealth(c.Seat,new MatchTarget(c.Seat),5,c.Card.Type=="SPELL",c.Card.Type=="SPELL");break;
  }}
- void Register(string id,string target,Action<EffectContext> action,Func<MatchEngine,int,string> requirement=null){effects[id]=new CardEffect{Target=target,Apply=action,Requirement=requirement};}
+ internal void Register(string id,string target,Action<EffectContext> action,Func<MatchEngine,int,string> requirement=null){effects[id]=new CardEffect{Target=target,Apply=action,Requirement=requirement};}
  void Damage(string id,int amount,string target="ANY_CHARACTER"){Register(id,target,c=>Hit(c,amount));}
  static void Hit(EffectContext context,int amount){context.Game.Damage(context.Target,context.Game.SpellDamageAmount(context.Seat,amount));}
  static void Kill(EffectContext context){var unit=context.Game.Unit(context.Target);unit.DamageTaken=unit.MaxHealth;}

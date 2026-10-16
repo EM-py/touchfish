@@ -43,9 +43,9 @@ public static class TurnStartRules {
  public static void Resolve(MatchEngine game,int seat){ConditionalTriggerRules.Resolve(game,MatchTriggerTiming.TurnStart,seat);}
 }
 public static class TimedCostRules {
- public static void GrantFreeSpells(MatchEngine game,int seat,int throughTurn){game.Players[seat].FreeSpellsUntilTurn=Math.Max(game.Players[seat].FreeSpellsUntilTurn,throughTurn);}
- public static int Apply(MatchEngine game,int seat,CardRecord card,int cost,bool ignorePreparation=false){if(card.Type=="SPELL"&&MatchEngine.Has(card,"SECRET")&&game.Players[seat].FreeSecretThisTurn)return 0;if(card.Type=="SPELL"&&!ignorePreparation)cost=Math.Max(0,cost-game.Players[seat].PreparationDiscount);return card.Type=="SPELL"&&game.Players[seat].FreeSpellsUntilTurn>=game.Turn?0:cost;}
- public static void Expire(MatchEngine game){foreach(var player in game.Players){player.PreparationDiscount=0;player.FreeSecretThisTurn=false;if(player.FreeSpellsUntilTurn<=game.Turn)player.FreeSpellsUntilTurn=-1;}}
+ public static void GrantFreeSpells(MatchEngine game,int seat,int throughTurn){var p=game.Players[seat];p.FreeSpellsUntilTurn=Math.Max(p.FreeSpellsUntilTurn,throughTurn);p.SpellCostPenalty=0;p.SpellCostPenaltyUntilTurn=-1;}
+ public static int Apply(MatchEngine game,int seat,CardRecord card,int cost,bool ignorePreparation=false){if(card.Type!="SPELL")return cost;var p=game.Players[seat];if(MatchEngine.Has(card,"SECRET")&&p.FreeSecretThisTurn)return 0;if(p.FreeSpellsUntilTurn>=game.Turn)cost=0;if(p.SpellCostPenaltyUntilTurn>=game.Turn)cost+=p.SpellCostPenalty;if(!ignorePreparation)cost=Math.Max(0,cost-p.PreparationDiscount);return cost;}
+ public static void Expire(MatchEngine game){foreach(var player in game.Players){player.PreparationDiscount=0;player.FreeSecretThisTurn=false;if(player.FreeSpellsUntilTurn<=game.Turn)player.FreeSpellsUntilTurn=-1;if(player.SpellCostPenaltyUntilTurn<=game.Turn){player.SpellCostPenalty=0;player.SpellCostPenaltyUntilTurn=-1;}}}
 }
 public sealed partial class MatchEngine {
  internal bool TriggerCoinFlip(){return random.Next(2)==0;}

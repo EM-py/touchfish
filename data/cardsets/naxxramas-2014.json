@@ -638,7 +638,7 @@
       "Cost": 4,
       "Attack": 4,
       "Health": 2,
-      "Durability": 0,
+      "Durability": 2,
       "Collectible": true,
       "Mechanics": [
         "DEATHRATTLE"

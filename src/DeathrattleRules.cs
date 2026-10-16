@@ -5,6 +5,8 @@ using System.Linq;
 namespace Touchfish {
 public static class DeathrattleRules {
  static readonly Dictionary<string,Action<MatchEngine,BattleUnit>> effects=new Dictionary<string,Action<MatchEngine,BattleUnit>>{
+  {"FP1_002",(g,u)=>SummonAtDeath(g,u,"FP1_002t",2)},
+  {"FP1_011",NaxxRules.Death},{"FP1_023",NaxxRules.Death},{"FP1_022",NaxxRules.Death},{"FP1_026",NaxxRules.Death},{"FP1_004",NaxxRules.Death},{"FP1_009",NaxxRules.Death},
   {"EX1_556",(g,u)=>SummonAtDeath(g,u,"VAN_skele21",1)},
   {"EX1_096",(g,u)=>g.Draw(u.Owner,1)},
   {"EX1_012",(g,u)=>g.Draw(u.Owner,1)},
