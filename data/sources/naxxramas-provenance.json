@@ -3,12 +3,13 @@
   "SourceBuild": "253932",
   "SnapshotSha256": "41d3047f6c8b43c36b21a4bc76a34eeeb5c949cd27d088cf7709356fe4db6b6e",
   "SourceExtractSha256": "bcc2593815f71d4fb2b88c47a92fa58e3eef3d79b802228871258f8cc545496b",
-  "PackageSha256": "3be35d273003744353791206002fb3d8462a1085f263b169bf73d27a8ff1768a",
+  "PackageSha256": "8f76bf260df05e3766176cf41453a73bb460acfc5590ceed4943ec29ccbaf5fb",
   "DeckableCards": 30,
   "HelperCards": 5,
   "Reconstruction": [
     "Removed later Undead race tags; retained original Beast/Demon types.",
-    "Explicit EffectId retains unsupported-effect blocking until Naxxramas rules are implemented."
+    "Explicit EffectId retains unsupported-effect blocking until Naxxramas rules are implemented.",
+    "Weapon durability falls back to source health when the durability field is zero; Death's Bite is 4/2."
   ],
   "Scope": "Collectible multiplayer cards and five summon tokens only; no adventure bosses or puzzle cards.",
   "Cutoff": "2014-08, all adventure wings open; before September balance changes",

@@ -20,6 +20,7 @@
   "MatchEngine.cs",
   "TargetResolutionRules.cs",
   "MatchRules.cs",
+  "NaxxRules.cs",
   "MatchVisualEvents.cs",
   "MinionSpeechRules.cs",
   "MurlocRules.cs",
