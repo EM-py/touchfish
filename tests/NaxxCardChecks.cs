@@ -8,7 +8,7 @@ public static partial class RuleTests {
   Check(NaxxRules.CardIds.Length==12&&NaxxRules.CardIds.All(c=>matchRules.Supports(catalog.Card(c))),"Requested twelve cards are registered");
   Check(catalog.Deckable(catalog.Pool("classic-2014")).Count(matchRules.Supports)==382&&catalog.Deckable(catalog.Pool("naxxramas-2014")).Count(matchRules.Supports)==412,"Classic remains 382; all thirty Naxx cards make 412/412");
   foreach(string cl in catalog.Pool("classic-2014").HeroDbfIds.Keys){var own=catalog.BrowseDeckable("naxxramas-2014").Single(c=>c.CardClass==cl);Check(matchRules.Supports(own),cl+" Naxx class card supported");var a=new DeckDocument{ClassId=cl,PoolId="naxxramas-2014"};a.Cards[own.Id]=1;var b=new DeckDocument{ClassId="MAGE",PoolId=a.PoolId};Check(new MatchEngine(catalog,a,b,12,testMode:true)!=null,"Actual opening accepts "+own.Name);}
-  NaxxDeathEffects();NaxxSecrets();NaxxSpellsAndWeapon();NaxxLoatheb();NaxxRemaining();
+  NaxxDeathEffects();NaxxSecrets();NaxxSpellsAndWeapon();NaxxLoatheb();NaxxRemaining();NaxxCrossCardRegression();
  }
  static void NaxxDeathEffects(){
   var g=Game();var web=g.Summon(0,"FP1_011");NaxxKill(g,web);Check(g.Players[0].Hand.Count==1,"Webspinner gives one card");var generated=g.Players[0].Hand.Single();Check(g.Card(generated.CardId).Race=="BEAST"&&generated.Generated&&g.Rules.Supports(g.Card(generated.CardId)),"Generated beast has valid effect and foreign-class permission");var wire=LanProtocol.View(g,1,"web",1);Check(wire.Players[0].Hand.Length==0&&wire.Players[0].HandCount==1,"Webspinner identity private, quantity public");
@@ -94,6 +94,15 @@ public static partial class RuleTests {
   g=Game();for(int n=0;n<8;n++)NaxxKill(g,g.Summon(0,"VAN_CS2_182"));g.Summon(0,"FP1_013");g.EndTurn();Check(g.Players[0].Board.Count==7,"Kelthuzad resurrects only available six slots");
   g=Game();var original=g.Summon(0,"VAN_CS2_182");g.Buff(new MatchTarget(0,original.Id),4,4);NaxxKill(g,original);var silentKt=g.Summon(0,"FP1_013");g.Silence(new MatchTarget(0,silentKt.Id));g.EndTurn();Check(g.Players[0].Board.Count==1,"Silenced Kelthuzad cannot resurrect");
   g=Game();NaxxKill(g,g.Summon(0,"VAN_CS2_182"));var kt=g.Summon(0,"FP1_013");NaxxKill(g,kt);g.EndTurn();Check(g.Players[0].Board.Count==0,"Dead Kelthuzad cannot trigger its own return");
+ }
+
+ static void NaxxCrossCardRegression(){
+  var g=Game();g.Players[1].Health=20;g.Summon(0,"VAN_EX1_591");g.Summon(0,"FP1_001");Check(g.Play(0,NaxxHand(g,"FP1_019")).Success,"Poison Seeds clears Soulpriest and Chow");Check(g.Players[1].Health==25,"Chow deathrattle does not inherit stale spell Soulpriest snapshot");
+  g=Game();g.Players[1].Health=20;g.Summon(0,"VAN_EX1_591");var chow=g.Summon(0,"FP1_001");Check(g.Play(0,NaxxHand(g,"FP1_025"),new MatchTarget(0,chow.Id)).Success&&g.Players[1].Health==15,"Living Soulpriest still converts Chow deathrattle during Reincarnate");
+  g=Game();var witness=g.Summon(0,"VAN_CS2_231");var target=g.Summon(0,"VAN_CS2_182");g.ArmSecret(0,new HandCard{Id=id++,CardId="VAN_EX1_136"});g.EndTurn();int enteredHealth=-1;g.Rules.RegisterTrigger(new ConditionalTrigger{CardId="CS2_231",Timing=MatchTriggerTiming.MinionSummoned,Condition=c=>c.Summoned.CardId=="VAN_CS2_182",Apply=c=>{enteredHealth=c.Summoned.Health;c.Game.Damage(new MatchTarget(c.Summoned.Owner,c.Summoned.Id),1);}});NaxxKill(g,target);Check(enteredHealth==1,"Redemption sets health before after-summon observers");Check(!g.Players[0].Board.Any(u=>u.CardId=="VAN_CS2_182"),"Redemption revived minion can die during summon triggers without being restored afterward");
+  g=Game();target=g.Summon(0,"VAN_CS2_182");g.Equip(0,"VAN_EX1_366");g.ArmSecret(0,new HandCard{Id=id++,CardId="VAN_EX1_136"});g.EndTurn();NaxxKill(g,target);var restored=g.Players[0].Board.Single();Check(restored.CardId=="VAN_CS2_182"&&restored.Health==2&&restored.BuffHealth==1&&restored.BuffAttack==1,"Sword of Justice buffs Redemption's one-health minion without health being overwritten");Check(g.Players[0].WeaponDurability==4,"Redemption consumes exactly one Sword durability");
+  g=Game();g.Players[1].Health=20;g.Summon(0,"VAN_EX1_591");chow=g.Summon(0,"FP1_001");g.Summon(0,"FP1_031");Check(g.Play(0,NaxxHand(g,"FP1_025"),new MatchTarget(0,chow.Id)).Success&&g.Players[1].Health==10,"Baron doubles native converted healing while live Soulpriest remains");
+
  }
 
 }

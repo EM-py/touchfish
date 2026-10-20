@@ -31,7 +31,7 @@ public sealed partial class MatchEngine {
  public bool SecretPreHeroDamage(int seat,int amount){if(Players[seat].SecretImmuneTurn==Turn)return true;foreach(var s in SecretQueue(seat)){if(Card(s.CardId).BaseId=="EX1_295"&&amount-Players[seat].Armor>=Players[seat].Health){RevealSecret(s);Players[seat].SecretImmuneTurn=Turn;return true;}}return false;}
  public void SecretHeroDamaged(int seat,int amount){foreach(var s in SecretQueue(seat)){if(Card(s.CardId).BaseId=="EX1_132"){RevealSecret(s);Damage(new MatchTarget(1-seat),amount);}}}
  public void SecretMinionDied(BattleUnit dead,SecretInstance[] eligible=null){if(Active==dead.Owner)return;foreach(var s in (eligible??SecretQueue(dead.Owner)).Where(s=>s.Seat==dead.Owner).ToArray()){if(!SecretPresent(s))continue;switch(Card(s.CardId).BaseId){
-  case "EX1_136":if(Players[dead.Owner].Board.Count>=Mode.BoardSlots)break;RevealSecret(s);var board=Players[dead.Owner].Board;int at=board.FindIndex(u=>u.Id==dead.DeathAnchor);var unit=Summon(dead.Owner,dead.CardId,at<0?board.Count:at);if(unit!=null)unit.DamageTaken=unit.MaxHealth-1;break;
+  case "EX1_136":if(Players[dead.Owner].Board.Count>=Mode.BoardSlots)break;RevealSecret(s);var board=Players[dead.Owner].Board;int at=board.FindIndex(u=>u.Id==dead.DeathAnchor);Summon(dead.Owner,dead.CardId,at<0?board.Count:at,beforeTriggers:unit=>unit.DamageTaken=unit.MaxHealth-1);break;
   case "FP1_020":var target=RandomTarget(Characters(dead.Owner,false));if(target!=null){RevealSecret(s);Buff(target,3,2);}break;
   case "FP1_018":RevealSecret(s);GiveNaxxCard(dead.Owner,dead.CardId);GiveNaxxCard(dead.Owner,dead.CardId);break;
  }}}
