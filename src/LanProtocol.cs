@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,6 +19,13 @@ public static class LanProtocol {
  public static IPEndPoint Endpoint(string value){var parts=value.Trim().Split(':');IPAddress address;int port=Port;if(parts.Length>2||!IPAddress.TryParse(parts[0],out address)||!PrivateAddress(address)||parts.Length==2&&(!Int32.TryParse(parts[1],out port)||port<1024||port>65535))throw new InvalidOperationException("请输入局域网 IPv4 地址，例如 192.168.1.8:42671。");return new IPEndPoint(address,port);}
  public static string Addresses(int port){return String.Join(" / ",Dns.GetHostAddresses(Dns.GetHostName()).Where(a=>PrivateAddress(a)&&!IPAddress.IsLoopback(a)).Select(a=>a+":"+port));}
  public static string Fingerprint(CardCatalog catalog){using(var sha=SHA256.Create()){string data=JsonData.Serializer().Serialize(catalog.Cards.Values.OrderBy(c=>c.Id,StringComparer.Ordinal).ToArray())+JsonData.Serializer().Serialize(catalog.Pools);byte[] app=File.ReadAllBytes(typeof(LanProtocol).Assembly.Location);return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(data)))+":"+Convert.ToBase64String(sha.ComputeHash(app));}}
+ public static string CompatibilityError(string expected,string actual){
+  if(String.IsNullOrEmpty(expected)||String.IsNullOrEmpty(actual))return "程序或牌库版本不同，请双方使用同一份完整包。";
+  if(expected==actual)return null;var own=expected.Split(':');var peer=actual.Split(':');
+  if(own.Length!=2||peer.Length!=2)return "程序或牌库版本不同，请双方使用同一份完整包。";
+  if(own[0]!=peer[0])return "双方牌库数据版本不同，请双方使用同一份完整发布包；不是保存卡组的问题。";
+  return "双方程序构建版本不同，相同版本号也可能是不同文件。请双方使用同一份客户端。";
+ }
  public static void WriteFrame(Stream stream,string text){byte[] data=Encoding.UTF8.GetBytes(text);if(data.Length==0||data.Length>MaxFrame)throw new InvalidDataException("联机消息大小无效。");byte[] header=BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data.Length));stream.Write(header,0,4);stream.Write(data,0,data.Length);}
  static void ReadExact(Stream stream,byte[] data){int offset=0;while(offset<data.Length){int n=stream.Read(data,offset,data.Length-offset);if(n==0)throw new EndOfStreamException("对方已离开。");offset+=n;}}
  public static string ReadFrame(Stream stream){var header=new byte[4];ReadExact(stream,header);int size=IPAddress.NetworkToHostOrder(BitConverter.ToInt32(header,0));if(size<=0||size>MaxFrame)throw new InvalidDataException("联机消息大小无效。");var data=new byte[size];ReadExact(stream,data);return new UTF8Encoding(false,true).GetString(data);}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -68,6 +68,14 @@ public sealed class DeckDocument {
  public DeckDocument Copy(){return new DeckDocument{SchemaVersion=SchemaVersion,Id=Id,Name=Name,PoolId=PoolId,ClassId=ClassId,Cards=new Dictionary<string,int>(Cards)};}
 }
 public static class DeckRules {
+ // Promote archived decks only into a compatible active superset, without modifying saved data.
+ public static DeckDocument ForCurrentPlay(CardCatalog catalog,DeckDocument source){
+  Validate(catalog,source,false);var copy=source.Copy();var old=catalog.Pool(source.PoolId);if(!old.Archived)return copy;
+  var target=catalog.Pools.FirstOrDefault(p=>!p.Archived&&old.CardSetIds.All(set=>p.CardSetIds.Contains(set)));if(target==null)return copy;
+  copy.PoolId=target.Id;copy.Cards.Clear();foreach(var pair in source.Cards){string id=pair.Key,replacement;if(target.CardReplacements!=null&&target.CardReplacements.TryGetValue(id,out replacement))id=replacement;int count;copy.Cards.TryGetValue(id,out count);copy.Cards[id]=count+pair.Value;}
+  Validate(catalog,copy,false);return copy;
+ }
+
  public static string CanAdd(CardCatalog catalog,DeckDocument deck,CardRecord card){
   var pool=catalog.Pool(deck.PoolId);if(!card.Collectible||!pool.Contains(card)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON"))return "这张牌不能加入当前卡池。";
   if(card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId)return "只能加入本职业或中立卡牌。";
