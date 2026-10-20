@@ -8,8 +8,11 @@ public static class SecretRules {
  public static void Apply(EffectContext c){c.Game.ArmSecret(c.Seat,c.PlayedHand);}
 }
 public sealed partial class MatchEngine {
- // Secret identities remain authoritative and are never part of public player snapshots.
+ // Only the owner receives secret identities; public player snapshots retain counts only.
  readonly List<SecretInstance> secrets=new List<SecretInstance>();
+ public string[] SecretCards(int seat){return secrets.Where(s=>s.Seat==seat).Select(s=>s.CardId).ToArray();}
+ internal void RestoreOwnSecrets(int seat,string[] ids){secrets.RemoveAll(s=>s.Seat==seat);foreach(string id in ids)secrets.Add(new SecretInstance{Id=nextId++,Seat=seat,CardId=id});}
+ internal void NotifySecretFromDeck(int seat,string id){EmitVisual("secret-armed",seat,name:Card(id).Name);var item=VisualEvents[VisualEvents.Count-1];item.CardId=id;item.RecipientSeat=seat;}
  public string SecretRequirement(int seat,CardRecord card){return Players[seat].SecretCount>=5?"最多同时挂出五张奥秘。":secrets.Any(s=>s.Seat==seat&&s.CardId==card.Id)?"不能重复挂出同名奥秘。":null;}
  public void DestroySecrets(int seat){secrets.RemoveAll(s=>s.Seat==seat);Players[seat].SecretCount=0;}
  public void ArmSecret(int seat,HandCard hand){secrets.Add(new SecretInstance{Id=hand.Id,Seat=seat,CardId=hand.CardId});Players[seat].SecretCount=secrets.Count(s=>s.Seat==seat);}
