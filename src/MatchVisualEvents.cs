@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 
 namespace Touchfish {
-// Public presentation events only: no hidden hand/deck identities.
+// Events are public by default; owner-only events must be filtered before LAN serialization.
 public sealed class MatchVisualEvent {
+ public int RecipientSeat=-1;
  public int Sequence,Action,Seat,UnitId,Slot=-1,TargetSeat=-1,TargetUnitId,Amount,CardCost,PaidCost,HealthBefore,Overkill;public string Kind,CardName,CardId,CardText;
 }
 public sealed class MatchVisualCursor {
