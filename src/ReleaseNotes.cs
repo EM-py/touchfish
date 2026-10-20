@@ -6,8 +6,9 @@ using System.Windows.Controls;
 
 namespace Touchfish {
 public static class AppRelease {
- public const string Version="v0.8.3",Date="2026-10-20";
- public static readonly string[] PatchNotes=new[]{"悬停己方奥秘问号可查看名称与效果；对手的悬停提示仅显示“奥秘数量:x”。","疯狂的科学家从牌库成功置入奥秘后，仅持有者收到约两秒的牌名提示，关闭特效或极简模式也可看到基础提示。","己方奥秘列表与私有提示按接收者发送；对手不接收未触发奥秘的名称，重复快照不重播提示。","修复奥金尼与肉用僵尸在法术内部同批死亡后的治疗转换：亡语按当前场面结算，法术自身快照保持。","修复救赎复活随从的召唤响应时机：先设一血再触发响应，后续伤害和公正之剑加成不再被覆盖。","旧经典保存卡组在标准对战、本地test和人机入口自动兼容当前纳克卡池；原保存代码和记录不自动改写。","联机明确区分牌库数据、程序构建和卡池不兼容；相同版本号也需要双方使用同一构建。","修复手牌变化后点击旧卡牌可能抛异常的问题：提示重新选择，保留合法攻击选择，不消耗资源。"};
+ public const string Version="v0.8.4",Date="2026-10-20";
+ public static readonly string[] PatchNotes=new[]{"竞技场启用经典＋纳克当前卡池，412张卡按所选职业过滤，纳克职业牌与中立牌均可被选出。","竞技选牌、卡组验证与联机握手使用同一当前卡池；鹰角弓采用纳克修订版本，辅助召唤牌不参与选牌。","保持普通70%、稀有20%、史诗8%、传说2%，同档三选一及第1、10、20、30轮稀有及以上；职业牌和法术/武器权重不变。","保留同名不限张数、30张开局和三局两胜流程。"};
+ public static readonly string[] Version083Notes=new[]{"悬停己方奥秘问号可查看名称与效果；对手的悬停提示仅显示“奥秘数量:x”。","疯狂的科学家从牌库成功置入奥秘后，仅持有者收到约两秒的牌名提示，关闭特效或极简模式也可看到基础提示。","己方奥秘列表与私有提示按接收者发送；对手不接收未触发奥秘的名称，重复快照不重播提示。","修复奥金尼与肉用僵尸在法术内部同批死亡后的治疗转换：亡语按当前场面结算，法术自身快照保持。","修复救赎复活随从的召唤响应时机：先设一血再触发响应，后续伤害和公正之剑加成不再被覆盖。","旧经典保存卡组在标准对战、本地test和人机入口自动兼容当前纳克卡池；原保存代码和记录不自动改写。","联机明确区分牌库数据、程序构建和卡池不兼容；相同版本号也需要双方使用同一构建。","修复手牌变化后点击旧卡牌可能抛异常的问题：提示重新选择，保留合法攻击选择，不消耗资源。"};
  public static readonly string[] Version082Notes=new[]{"补齐剩余16张纳克萨玛斯中立牌，纳克30/30、当前卡池412/412全部可用；经典382张保持独立。","实现瑞文戴尔男爵亡语翻倍、克尔苏加德本回合死亡复活、双子召唤塔迪乌斯和回响软泥怪状态复制。","补齐送葬者、纳克萨玛斯之影、石像鬼、蛛网领主、哀嚎的灵魂及其余亡语；遵守沉默、控制权、同批死亡和七槽限制。","淤泥喷射者恢复2014年3/5数值，导入脚本同步修正；所有纳克召唤辅助牌支持回手和复制使用。"};
  public static readonly string[] Version081Notes=new[]{"纳克萨玛斯九职业卡，以及疯狂的科学家、洛欧塞布、死亡领主已可用。","补齐结网蛛随机野兽池所需的鬼灵爬行者与迈克斯纳；当前卡池支持396/412张。","普通模式特效低/高时显示爆牌牌面、碎裂动画和满手牌气泡；关闭时只在中央显示“牌名已破碎”，双方记录仍保留牌名。极简保持静默。","修正死亡之咬耐久度为2；奥秘从牌库置入不触发施法效果，不响应其进入战场前发生的死亡。"};
  public static readonly string[] Version080Notes=new[]{"现开开包与组牌行增加…详情按钮；加减卡牌与查看详情保留两个列表各自的滚动位置，对手进度刷新不再重建本方卡牌列表。","新增爆牌动画：手牌已满时抽到的卡牌在屏幕中央出现并碎裂；双方都能看到被爆卡牌的牌面。","爆牌时英雄显示‘我的手牌已经满了！’气泡；双方共享的对局记录显示被爆卡牌名称。","对手手牌数后显示其牌库剩余数量；牌库抽空后每次抽牌显示疲劳提示和递增伤害。","保持普通与极简窗口尺寸及手牌隐私；只公开爆牌卡牌，不公开双方手牌或牌库顺序。"};
@@ -31,6 +32,7 @@ public partial class PanelWindow {
   releasePanel=new Grid{Margin=new Thickness(12,8,12,8),Visibility=Visibility.Collapsed};releasePanel.RowDefinitions.Add(new RowDefinition{Height=new GridLength(24)});releasePanel.RowDefinitions.Add(new RowDefinition());Put(shell,releasePanel,4);var heading=new Grid();heading.ColumnDefinitions.Add(new ColumnDefinition());heading.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(64)});heading.Children.Add(T("更新日志 · "+AppRelease.Version,12,Ink));var updates=Btn("版本更新",64);updates.Height=22;updates.FontSize=10;updates.Click+=(s,e)=>OpenUpdates();Grid.SetColumn(updates,1);heading.Children.Add(updates);releasePanel.Children.Add(heading);
   var body=new StackPanel();
   body.Children.Add(ReleaseSection(AppRelease.Version,AppRelease.Date,AppRelease.PatchNotes));
+  body.Children.Add(ReleaseSection("v0.8.3","2026-10-20",AppRelease.Version083Notes));
   body.Children.Add(ReleaseSection("v0.8.2","2026-10-16",AppRelease.Version082Notes));
   body.Children.Add(ReleaseSection("v0.8.1","2026-10-16",AppRelease.Version081Notes));
   body.Children.Add(ReleaseSection("v0.8.0","2026-10-15",AppRelease.Version080Notes));

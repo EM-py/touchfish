@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +23,7 @@ public sealed class ArenaDraftWeights {
 }
 public sealed class ArenaDraftSession {
  public const int DraftSize=30,OfferSize=3;
+ public static PoolDefinition CurrentPool(CardCatalog catalog){var pool=catalog.Pools.FirstOrDefault(p=>!p.Archived);if(pool==null)throw new InvalidDataException("没有可用的竞技卡池。");return pool;}
  readonly CardCatalog catalog;
  readonly PoolDefinition pool;
  readonly Func<CardRecord,bool> supported;
@@ -36,7 +37,7 @@ public sealed class ArenaDraftSession {
  public readonly string Session=Guid.NewGuid().ToString("N");
 
  public ArenaDraftSession(CardCatalog source,int seed,Func<CardRecord,bool> isSupported,ArenaDraftWeights draftWeights=null){
-  if(source==null||isSupported==null)throw new ArgumentNullException();catalog=source;pool=catalog.Pool("classic-2014");supported=isSupported;random=new Random(seed);
+  if(source==null||isSupported==null)throw new ArgumentNullException();catalog=source;pool=CurrentPool(catalog);supported=isSupported;random=new Random(seed);
   weights=(draftWeights??new ArenaDraftWeights()).Copy();weights.Validate();
   string[] classIds=pool.HeroDbfIds.Keys.OrderBy(x=>x,StringComparer.Ordinal).ToArray();if(classIds.Length<OfferSize)throw new InvalidDataException("竞技模式需要至少三个可选职业。");
   var cardsInPool=catalog.Deckable(pool);foreach(var card in cardsInPool)if(!supported(card))throw new InvalidDataException("竞技卡池含暂不可用卡牌："+card.Name);
@@ -56,7 +57,7 @@ public sealed class ArenaDraftSession {
  public void Pick(int seat,string session,int revision,int index){if(seat<0||seat>1)throw new InvalidOperationException("选牌席位无效。");if(session!=Session||revision!=revisions[seat])throw new InvalidOperationException("竞技选择已更新，请重新选择。");if(chosenClasses[seat]==null){if(index<0||index>=classes[seat].Length)throw new InvalidOperationException("职业选项无效。");chosenClasses[seat]=classes[seat][index];offers[seat]=CardOffer(seat);}else{if(picks[seat]>=DraftSize||offers[seat]==null||index<0||index>=offers[seat].Length)throw new InvalidOperationException("卡牌选项无效。");cards[seat].Add(offers[seat][index]);picks[seat]++;if(picks[seat]<DraftSize)offers[seat]=CardOffer(seat);}revisions[seat]++;}
  public DeckDocument Deck(int seat){if(seat<0||seat>1)throw new ArgumentOutOfRangeException("seat");if(picks[seat]!=DraftSize||chosenClasses[seat]==null)throw new InvalidOperationException("需要先完成 30 次选牌。");var deck=new DeckDocument{PoolId=pool.Id,ClassId=chosenClasses[seat],Name="竞技卡组"};foreach(string id in cards[seat]){int count;if(!deck.Cards.TryGetValue(id,out count))count=0;deck.Cards[id]=count+1;}Validate(catalog,deck,true);return deck;}
  public static void Validate(CardCatalog catalog,DeckDocument deck,bool complete){
-  if(catalog==null||deck==null)throw new InvalidDataException("竞技卡组无效。");var pool=catalog.Pool("classic-2014");if(deck.PoolId!=pool.Id||!pool.HeroDbfIds.ContainsKey(deck.ClassId))throw new InvalidDataException("竞技模式只支持经典卡池和已选择职业。");if(complete&&deck.Count!=DraftSize||deck.Count>DraftSize)throw new InvalidDataException("竞技卡组必须恰好包含 30 张牌。");var rules=new MatchRules(catalog);foreach(var pair in deck.Cards){CardRecord card;if(pair.Value<1||!catalog.Cards.TryGetValue(pair.Key,out card)||!card.Collectible||!pool.CardSetIds.Contains(card.SetId)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON")||card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId||!rules.Supports(card))throw new InvalidDataException("竞技卡组包含不允许或暂不可用的牌。");}
+  if(catalog==null||deck==null)throw new InvalidDataException("竞技卡组无效。");var pool=CurrentPool(catalog);if(deck.PoolId!=pool.Id||!pool.HeroDbfIds.ContainsKey(deck.ClassId))throw new InvalidDataException("竞技模式需要当前竞技卡池和已选择职业。");if(complete&&deck.Count!=DraftSize||deck.Count>DraftSize)throw new InvalidDataException("竞技卡组必须恰好包含 30 张牌。");var rules=new MatchRules(catalog);foreach(var pair in deck.Cards){CardRecord card;if(pair.Value<1||!catalog.Cards.TryGetValue(pair.Key,out card)||!card.Collectible||!pool.Contains(card)||(card.Type!="MINION"&&card.Type!="SPELL"&&card.Type!="WEAPON")||card.CardClass!="NEUTRAL"&&card.CardClass!=deck.ClassId||!rules.Supports(card))throw new InvalidDataException("竞技卡组包含不允许或暂不可用的牌。");}
  }
 }
 }
